@@ -1,0 +1,241 @@
+-- usuwanie tabel
+BEGIN
+   FOR t IN (SELECT table_name FROM user_tables) LOOP
+      EXECUTE IMMEDIATE 'DROP TABLE ' || t.table_name || ' CASCADE CONSTRAINTS';
+   END LOOP;
+END;
+/
+
+
+-- kopiowanie tabel
+BEGIN
+   FOR t IN (SELECT table_name FROM all_tables WHERE owner = 'HR') LOOP
+      EXECUTE IMMEDIATE 'CREATE TABLE ' || t.table_name || ' AS SELECT * FROM HR.' || t.table_name;
+   END LOOP;
+END;
+/
+
+
+-- klucze główne
+ALTER TABLE COUNTRIES
+ADD CONSTRAINT country_id PRIMARY KEY (country_id);
+
+ALTER TABLE DEPARTMENTS
+ADD CONSTRAINT department_id PRIMARY KEY (country_id);
+
+ALTER TABLE EMPLOYEES
+ADD CONSTRAINT employee_id PRIMARY KEY (employee_id);
+
+ALTER TABLE JOBS
+ADD CONSTRAINT job_id PRIMARY KEY (job_id);
+
+ALTER TABLE LOCATIONS
+ADD CONSTRAINT location_id PRIMARY KEY (location_id);
+
+ALTER TABLE PRODUCTS
+ADD CONSTRAINT product_id PRIMARY KEY (product_id);
+
+ALTER TABLE REGIONS
+ADD CONSTRAINT region_id PRIMARY KEY (region_id);
+
+ALTER TABLE SALES
+ADD CONSTRAINT sale_id PRIMARY KEY (sale_id);
+
+ALTER TABLE JOB_GRADES
+ADD CONSTRAINT grade PRIMARY KEY (grade);
+
+
+-- klucze obce
+ALTER TABLE COUNTRIES
+ADD CONSTRAINT fk_region_id FOREIGN KEY (region_id) REFERENCES REGIONS(region_id);
+
+ALTER TABLE LOCATIONS
+ADD CONSTRAINT fk_country_id FOREIGN KEY (country_id) REFERENCES COUNTRIES(country_id);
+
+ALTER TABLE DEPARTMENTS
+ADD CONSTRAINT fk_location_id FOREIGN KEY (location_id) REFERENCES LOCATIONS(location_id);
+
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_employee_id FOREIGN KEY (employee_id) REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_job_id FOREIGN KEY (job_id) REFERENCES JOBS(job_id);
+
+ALTER TABLE JOB_HISTORY
+ADD CONSTRAINT fk_department_id FOREIGN KEY (department_id) REFERENCES DEPARTMENTS(department_id);
+
+ALTER TABLE DEPARTMENTS
+ADD FOREIGN KEY (manager_id) REFERENCES EMPLOYEES(employee_id);
+
+ALTER TABLE EMPLOYEES
+ADD CONSTRAINT fk_manager_id FOREIGN KEY (manager_id) REFERENCES EMPLOYEES(employee_id);
+
+
+-- zad 1
+SELECT last_name || ' ' || salary AS wynagrodzenie
+FROM employees
+WHERE department_id IN (20, 50)
+  AND salary BETWEEN 2000 AND 7000
+ORDER BY last_name;
+
+
+-- zad 2
+DEFINE sort_column = 'salary';
+SELECT 
+    hire_date, 
+    last_name, 
+    salary
+FROM 
+    employees
+WHERE 
+    manager_id IS NOT NULL
+    AND EXTRACT(YEAR FROM hire_date) = 2005
+ORDER BY 
+    &sort_column;
+
+
+-- zad 3
+DEFINE user_name_fragment = 'a';
+SELECT 
+    first_name || ' ' || last_name AS full_name,
+    salary, 
+    phone_number
+FROM 
+    employees
+WHERE 
+    SUBSTR(last_name, 3, 1) = 'e' -- Trzecia litera nazwiska to 'e'
+    AND INSTR(LOWER(first_name), LOWER('&user_name_fragment')) > 0 
+ORDER BY 
+    NLSSORT(first_name || ' ' || last_name, 'NLS_SORT = BINARY') DESC, 
+    salary ASC;
+
+
+-- zad 4
+SELECT 
+    first_name || ' ' || last_name AS imie_nazwisko,
+    ROUND(MONTHS_BETWEEN(SYSDATE, hire_date), 0) AS liczba_miesiecy,
+    
+    CASE 
+        WHEN ROUND(MONTHS_BETWEEN(SYSDATE, hire_date), 0) < 150 THEN 0.1 * salary
+        WHEN ROUND(MONTHS_BETWEEN(SYSDATE, hire_date), 0) BETWEEN 150 AND 200 THEN 0.2 * salary
+        ELSE 0.3 * salary
+    END AS wysokosc_dodatku
+FROM 
+    employees
+ORDER BY 
+    liczba_miesiecy;
+
+
+-- zad 5
+SELECT 
+    department_id,
+    ROUND(SUM(salary)) AS suma_zarobkow,
+    ROUND(AVG(salary)) AS srednia_zarobkow
+FROM 
+    employees
+WHERE 
+    department_id IN (
+        SELECT department_id
+        FROM employees
+        GROUP BY department_id
+        HAVING MIN(salary) > 5000
+    )
+GROUP BY 
+    department_id;
+
+
+-- zad 6
+SELECT 
+    e.last_name,
+    e.department_id,
+    d.department_name,
+    e.job_id
+FROM 
+    employees e
+JOIN 
+    departments d
+ON 
+    e.department_id = d.department_id
+WHERE 
+    d.location_id IN (
+        SELECT location_id
+        FROM locations
+        WHERE city = 'Toronto'
+    );
+
+
+-- zad 7
+SELECT 
+    e1.first_name AS imie,
+    e1.last_name AS nazwisko,
+    e2.first_name AS wspolpracownik_imie,
+    e2.last_name AS wspolpracownik_nazwisko
+FROM 
+    employees e1
+LEFT JOIN 
+    employees e2 ON e1.manager_id = e2.manager_id
+WHERE 
+    e1.first_name = 'Jennifer';
+
+
+-- zad 8
+SELECT 
+    d.department_id,
+    d.department_name
+FROM 
+    departments d
+LEFT JOIN 
+    employees e ON d.department_id = e.department_id
+WHERE 
+    e.employee_id IS NULL;
+
+
+-- zadanie 9 - tabela juz skopiowala sie na poczatku
+
+
+-- zad 10
+SELECT 
+    e.first_name || ' ' || e.last_name AS full_name,
+    e.job_id,
+    d.department_name,
+    e.salary,
+    g.grade
+FROM 
+    employees e
+JOIN 
+    job_grades g ON e.salary BETWEEN g.min_salary AND g.max_salary
+JOIN 
+    departments d ON e.department_id = d.department_id
+ORDER BY 
+    e.last_name, e.first_name;
+
+
+-- zad 11
+SELECT 
+    first_name, 
+    last_name, 
+    salary
+FROM 
+    employees
+WHERE 
+    salary > (SELECT AVG(salary) FROM employees)
+ORDER BY 
+    salary DESC;
+
+
+-- zad 12
+SELECT 
+    employee_id, 
+    first_name, 
+    last_name
+FROM 
+    employees e1
+WHERE 
+    EXISTS (
+        SELECT 1 
+        FROM employees e2
+        WHERE 
+            e2.department_id = e1.department_id
+            AND e2.last_name LIKE '%u%'
+    );
