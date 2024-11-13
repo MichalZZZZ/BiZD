@@ -1,0 +1,360 @@
+-- zad 1
+DECLARE
+    numer_max NUMBER;
+
+    nowy_departament departments.department_name%TYPE := 'EDUCATION';
+BEGIN
+    SELECT MAX(department_id) INTO numer_max FROM departments;
+
+    INSERT INTO departments (department_id, department_name)
+    VALUES (numer_max + 10, nowy_departament);
+
+    DBMS_OUTPUT.PUT_LINE('Dodano nowy departament: ' || nowy_departament || ' o numerze ' || (numer_max + 10));
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+
+
+-- zad 2
+DECLARE
+    numer_max NUMBER;
+
+    nowy_departament departments.department_name%TYPE := 'EDUCATION';
+BEGIN
+    SELECT MAX(department_id) INTO numer_max FROM departments;
+
+    INSERT INTO departments (department_id, department_name, location_id, manager_id)
+    VALUES (numer_max + 10, nowy_departament, 3000, NULL);
+
+    DBMS_OUTPUT.PUT_LINE('Dodano nowy departament: ' || nowy_departament || ' o numerze ' || (numer_max + 10) || ' z location_id 3000');
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+
+
+-- zad 3
+CREATE TABLE nowa (
+    liczba VARCHAR2(10)
+);
+
+DECLARE
+    i NUMBER;
+BEGIN
+    FOR i IN 1..10 LOOP
+        IF i = 4 OR i = 6 THEN
+            CONTINUE;
+        END IF;
+        
+        INSERT INTO nowa (liczba) VALUES (TO_CHAR(i));
+    END LOOP;
+
+    COMMIT;
+END;
+/
+
+
+-- zad 4
+DECLARE
+    kraj_record countries%ROWTYPE;
+BEGIN
+    SELECT * INTO kraj_record 
+    FROM countries 
+    WHERE country_id = 'CA';
+
+    DBMS_OUTPUT.PUT_LINE('Nazwa kraju: ' || kraj_record.country_name);
+    DBMS_OUTPUT.PUT_LINE('Region ID: ' || kraj_record.region_id);
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Nie znaleziono kraju o identyfikatorze CA.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+END;
+/
+
+
+-- zad 5
+DECLARE
+    CURSOR pracownicy_cursor IS
+        SELECT last_name, salary
+        FROM employees
+        WHERE department_id = 50;
+
+    pracownik_record pracownicy_cursor%ROWTYPE;
+BEGIN
+    OPEN pracownicy_cursor;
+    LOOP
+        FETCH pracownicy_cursor INTO pracownik_record;
+        
+        EXIT WHEN pracownicy_cursor%NOTFOUND;
+        
+        IF pracownik_record.salary > 3100 THEN
+            DBMS_OUTPUT.PUT_LINE(pracownik_record.last_name || ': nie dawać podwyżki');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE(pracownik_record.last_name || ': dać podwyżkę');
+        END IF;
+    END LOOP;
+
+    CLOSE pracownicy_cursor;
+END;
+/
+
+
+-- zad 6
+DECLARE
+    CURSOR pracownicy_cursor(p_min_salary NUMBER, p_max_salary NUMBER, p_imie_part VARCHAR2) IS
+        SELECT first_name, last_name, salary
+        FROM employees
+        WHERE salary BETWEEN p_min_salary AND p_max_salary
+          AND LOWER(first_name) LIKE '%' || LOWER(p_imie_part) || '%';
+
+    pracownik_record pracownicy_cursor%ROWTYPE;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('Pracownicy z zarobkami w przedziale 1000-5000 i imieniem zawierającym "a" lub "A":');
+    OPEN pracownicy_cursor(1000, 5000, 'a');
+    LOOP
+        FETCH pracownicy_cursor INTO pracownik_record;
+        EXIT WHEN pracownicy_cursor%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE(pracownik_record.first_name || ' ' || pracownik_record.last_name || ': ' || pracownik_record.salary);
+    END LOOP;
+    CLOSE pracownicy_cursor;
+
+    DBMS_OUTPUT.PUT_LINE('Pracownicy z zarobkami w przedziale 5000-20000 i imieniem zawierającym "u" lub "U":');
+    OPEN pracownicy_cursor(5000, 20000, 'u');
+    LOOP
+        FETCH pracownicy_cursor INTO pracownik_record;
+        EXIT WHEN pracownicy_cursor%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE(pracownik_record.first_name || ' ' || pracownik_record.last_name || ': ' || pracownik_record.salary);
+    END LOOP;
+    CLOSE pracownicy_cursor;
+END;
+/
+
+
+-- zadanie 7
+-- podpunkt a)
+CREATE OR REPLACE PROCEDURE dodaj_job (
+    p_job_id IN jobs.job_id%TYPE,
+    p_job_title IN jobs.job_title%TYPE
+) AS
+BEGIN
+    INSERT INTO jobs (job_id, job_title)
+    VALUES (p_job_id, p_job_title);
+    
+    DBMS_OUTPUT.PUT_LINE('Dodano nowy wiersz: ' || p_job_id || ', ' || p_job_title);
+    
+    COMMIT;
+EXCEPTION
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Błąd: Job_id ' || p_job_id || ' już istnieje.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+BEGIN
+    dodaj_job('DEV', 'Developer');
+    dodaj_job('DEV', 'Senior Developer');
+    dodaj_job('MGR', 'Manager');
+END;
+/
+
+
+-- podpunkt b)
+CREATE OR REPLACE PROCEDURE modyfikuj_job_title (
+    p_job_id IN jobs.job_id%TYPE,
+    p_new_job_title IN jobs.job_title%TYPE
+) AS
+    v_rows_updated NUMBER := 0;
+BEGIN
+    UPDATE jobs
+    SET job_title = p_new_job_title
+    WHERE job_id = p_job_id;
+    
+    v_rows_updated := SQL%ROWCOUNT;
+    
+    IF v_rows_updated = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Nie znaleziono pozycji o podanym Job_id: ' || p_job_id);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Zaktualizowano ' || v_rows_updated || ' wiersz(y) dla Job_id: ' || p_job_id);
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+BEGIN
+    modyfikuj_job_title('DEV', 'Senior Developer');
+    modyfikuj_job_title('UNKNOWN', 'Lead Developer');
+    modyfikuj_job_title('MGR', 'Operations Manager');
+END;
+/
+
+
+-- podpunkt c)
+CREATE OR REPLACE PROCEDURE usun_job (
+    p_job_id IN jobs.job_id%TYPE
+) AS
+    v_rows_deleted NUMBER := 0;
+BEGIN
+    DELETE FROM jobs
+    WHERE job_id = p_job_id;
+
+    v_rows_deleted := SQL%ROWCOUNT;
+
+    IF v_rows_deleted = 0 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Nie znaleziono stanowiska o podanym Job_id: ' || p_job_id);
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Usunięto ' || v_rows_deleted || ' wiersz(y) dla Job_id: ' || p_job_id);
+        COMMIT;
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+BEGIN
+    usun_job('DEV');
+    usun_job('UNKNOWN');
+    usun_job('MGR');
+END;
+/
+
+
+-- podpunkt d)
+CREATE OR REPLACE PROCEDURE wyciagnij_zarobki_i_nazwisko (
+    p_employee_id IN employees.employee_id%TYPE,
+    p_salary OUT employees.salary%TYPE,
+    p_last_name OUT employees.last_name%TYPE
+) AS
+BEGIN
+    SELECT salary, last_name
+    INTO p_salary, p_last_name
+    FROM employees
+    WHERE employee_id = p_employee_id;
+    
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Nie znaleziono pracownika o podanym ID: ' || p_employee_id);
+        p_salary := NULL;
+        p_last_name := NULL;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+END;
+/
+
+DECLARE
+    v_salary employees.salary%TYPE;
+    v_last_name employees.last_name%TYPE;
+BEGIN
+    wyciagnij_zarobki_i_nazwisko(101, v_salary, v_last_name);
+    DBMS_OUTPUT.PUT_LINE('Zarobki: ' || v_salary || ', Nazwisko: ' || v_last_name);
+
+    wyciagnij_zarobki_i_nazwisko(9999, v_salary, v_last_name);
+    DBMS_OUTPUT.PUT_LINE('Zarobki: ' || v_salary || ', Nazwisko: ' || v_last_name);
+END;
+/
+
+
+-- podpunkt e)
+DECLARE
+    v_max_id employees.employee_id%TYPE;
+BEGIN
+    SELECT NVL(MAX(employee_id), 0) INTO v_max_id FROM employees;
+
+    EXECUTE IMMEDIATE 'CREATE SEQUENCE employees_sequence START WITH ' || (v_max_id + 1) || ' INCREMENT BY 1 NOCACHE';
+    
+    DBMS_OUTPUT.PUT_LINE('Utworzono sekwencję employees_sequence, która zaczyna się od ' || (v_max_id + 1));
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił błąd: ' || SQLERRM);
+END;
+/
+
+CREATE OR REPLACE PROCEDURE dodaj_pracownika (
+    p_first_name IN employees.first_name%TYPE,
+    p_last_name IN employees.last_name%TYPE,
+    p_email IN employees.email%TYPE,
+    p_phone_number IN employees.phone_number%TYPE,
+    p_hire_date IN employees.hire_date%TYPE,
+    p_job_id IN employees.job_id%TYPE,
+    p_salary IN employees.salary%TYPE
+) AS
+    v_employee_id employees.employee_id%TYPE;
+BEGIN
+    IF p_salary > 20000 THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Wynagrodzenie nie może być wyższe niż 20000.');
+    END IF;
+
+    SELECT employees_sequence.NEXTVAL INTO v_employee_id FROM dual;
+
+    INSERT INTO employees (
+        employee_id, 
+        first_name, 
+        last_name, 
+        email, 
+        phone_number, 
+        hire_date, 
+        job_id, 
+        salary
+    ) VALUES (
+        v_employee_id,
+        p_first_name,
+        p_last_name,
+        p_email,
+        p_phone_number,
+        p_hire_date,
+        p_job_id,
+        p_salary
+    );
+
+    DBMS_OUTPUT.PUT_LINE('Dodano nowego pracownika z ID: ' || v_employee_id);
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Wystąpił nieoczekiwany błąd: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+BEGIN
+    dodaj_pracownika(
+        'Jan', 
+        'Kowalski', 
+        'jan.kowalski@example.com', 
+        '123-456-789', 
+        SYSDATE, 
+        'DEV', 
+        15000
+    );
+
+    dodaj_pracownika(
+        'Anna', 
+        'Nowak', 
+        'anna.nowak@example.com', 
+        '987-654-321', 
+        SYSDATE, 
+        'MGR', 
+        25000
+    );
+END;
+/
+
+
+
