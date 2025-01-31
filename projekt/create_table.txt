@@ -1,0 +1,215 @@
+CREATE TABLE Cinema (
+    CinemaID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Location VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20) NOT NULL
+);
+
+CREATE TABLE ArchivesAddedCinema (
+    CinemaID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Location VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20) NOT NULL,
+    AddedDate TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ArchivesDeletedCinema (
+    CinemaID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Location VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20) NOT NULL,
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE Movie (
+    MovieID INT PRIMARY KEY,
+    Title VARCHAR2(255) NOT NULL,
+    Genre VARCHAR2(50) NOT NULL,
+    Duration INT NOT NULL,
+    Rating VARCHAR2(10)
+);
+
+CREATE TABLE ArchivesAddedMovie (
+    MovieID INT PRIMARY KEY,
+    Title VARCHAR2(255) NOT NULL,
+    Genre VARCHAR2(50) NOT NULL,
+    Duration INT NOT NULL,
+    Rating VARCHAR2(10),
+    AddedDate TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ArchivesDeletedMovie (
+    MovieID INT PRIMARY KEY,
+    Title VARCHAR2(255) NOT NULL,
+    Genre VARCHAR2(50) NOT NULL,
+    Duration INT NOT NULL,
+    Rating VARCHAR2(10),
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE Customer (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Email VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20)
+);
+
+CREATE TABLE ArchivesAddedCustomer (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Email VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20),
+    AddedDate TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ArchivesDeletedCustomer (
+    CustomerID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Email VARCHAR2(255) NOT NULL,
+    Phone VARCHAR2(20),
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE Auditorium (
+    AuditoriumID INT PRIMARY KEY,
+    CinemaID INT NOT NULL,
+    Name VARCHAR2(255) NOT NULL,
+    Capacity INT NOT NULL,
+    CONSTRAINT fk_CinemaID FOREIGN KEY (CinemaID) REFERENCES Cinema(CinemaID)
+);
+
+CREATE TABLE ArchivesAddedAuditorium (
+    AuditoriumID INT PRIMARY KEY,
+    Name VARCHAR2(255) NOT NULL,
+    Capacity INT NOT NULL,
+    AddedDate TIMESTAMP NOT NULL,
+    CinemaName VARCHAR2(255)
+);
+
+CREATE TABLE ArchivesDeletedAuditorium (
+    AuditoriumID INT PRIMARY KEY,
+    CinemaName VARCHAR2(255),
+    Name VARCHAR2(255) NOT NULL,
+    Capacity INT NOT NULL,
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE Showtime (
+    ShowtimeID INT PRIMARY KEY,
+    MovieID INT NOT NULL,
+    AuditoriumID INT NOT NULL,
+    StartTime TIMESTAMP NOT NULL,
+    EndTime TIMESTAMP NOT NULL,
+    CONSTRAINT fk_MovieID FOREIGN KEY (MovieID) REFERENCES Movie(MovieID),
+    CONSTRAINT fk_AuditoriumID FOREIGN KEY (AuditoriumID) REFERENCES Auditorium(AuditoriumID)
+);
+
+CREATE TABLE ArchivesAddedShowtime (
+    ShowtimeID INT PRIMARY KEY,
+    StartTime TIMESTAMP NOT NULL,
+    EndTime TIMESTAMP NOT NULL,
+    AddedDate TIMESTAMP NOT NULL,
+    MovieName VARCHAR2(255),
+    AuditoriumName VARCHAR2(255)
+);
+
+CREATE TABLE ArchivesDeletedShowtime (
+    ShowtimeID INT PRIMARY KEY,
+    MovieName VARCHAR2(255),
+    AuditoriumName VARCHAR2(255),
+    StartTime TIMESTAMP NOT NULL,
+    EndTime TIMESTAMP NOT NULL,
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE Ticket (
+    TicketID INT PRIMARY KEY,
+    ShowtimeID INT NOT NULL,
+    CustomerID INT NOT NULL,
+    SeatNumbers VARCHAR2(255) NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    CountPerson INT NOT NULL,
+    Sum DECIMAL(10, 2) NOT NULL,
+    DateBuy TIMESTAMP NOT NULL,
+    CONSTRAINT fk_ShowtimeID FOREIGN KEY (ShowtimeID) REFERENCES Showtime(ShowtimeID),
+    CONSTRAINT fk_CustomerID FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID)
+);
+
+CREATE TABLE ArchivesAddedTicket (
+    TicketID INT PRIMARY KEY,
+    SeatNumbers VARCHAR2(255) NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    CountPerson INT NOT NULL,
+    Sum DECIMAL(10, 2) NOT NULL,
+    DateBuy TIMESTAMP NOT NULL,
+    AddedDate TIMESTAMP NOT NULL,
+    ShowtimeMovieName VARCHAR2(255),
+    CustomerName VARCHAR2(255)
+);
+
+CREATE TABLE ArchivesDeletedTicket (
+    TicketID INT PRIMARY KEY,
+    ShowtimeMovieName VARCHAR2(255),
+    CustomerName VARCHAR2(255),
+    SeatNumbers VARCHAR2(255) NOT NULL,
+    Price DECIMAL(10, 2) NOT NULL,
+    CountPerson INT NOT NULL,
+    Sum DECIMAL(10, 2) NOT NULL,
+    DateBuy TIMESTAMP NOT NULL,
+    DeletedDate TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE ArchivesUpdateData (
+    valueBefore CLOB,
+    valueAfter CLOB,
+    tableName VARCHAR(255) NOT NULL,
+    time TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ArchivesAction (
+    action VARCHAR(30),
+    value CLOB,
+    tableName VARCHAR(255) NOT NULL,
+    time TIMESTAMP NOT NULL
+);
+
+
+
+CREATE TABLE MonthlyTicketSales (
+    YearMonth VARCHAR2(7) PRIMARY KEY,
+    TotalTicketsSold INT,
+    TotalRevenue DECIMAL(10, 2),
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE QuarterlyTicketSales (
+    YearQuarter VARCHAR2(6) PRIMARY KEY,
+    TotalTicketsSold INT,
+    TotalRevenue DECIMAL(10, 2),
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE AnnualTicketSales (
+    Year INT PRIMARY KEY,
+    TotalTicketsSold INT,
+    TotalRevenue DECIMAL(10, 2),
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE TopMovies (
+    Title VARCHAR2(255) NOT NULL,
+    TicketsSold NUMBER NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

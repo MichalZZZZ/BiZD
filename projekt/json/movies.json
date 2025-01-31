@@ -1,0 +1,93 @@
+[
+	{
+		"MovieID": 1,
+		"Title": "The Matrix",
+		"Genre": "Sci-Fi",
+		"Duration": 136,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 2,
+		"Title": "Inception",
+		"Genre": "Action",
+		"Duration": 148,
+		"Rating": "very good"
+	},
+	{
+		"MovieID": 3,
+		"Title": "Fast & Furious 9",
+		"Genre": "Action",
+		"Duration": 167,
+		"Rating": "very good"
+	},
+	{
+		"MovieID": 4,
+		"Title": "The Shawshank Redemption",
+		"Genre": "Drama",
+		"Duration": 142,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 5,
+		"Title": "The Godfather",
+		"Genre": "Crime",
+		"Duration": 175,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 6,
+		"Title": "The Dark Knight",
+		"Genre": "Action",
+		"Duration": 152,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 7,
+		"Title": "The Lord of the Rings: The Return of the King",
+		"Genre": "Adventure",
+		"Duration": 201,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 8,
+		"Title": "The Lord of the Rings: The Fellowship of the Ring",
+		"Genre": "Adventure",
+		"Duration": 178,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 9,
+		"Title": "The Lord of the Rings: The Two Towers",
+		"Genre": "Adventure",
+		"Duration": 179,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 10,
+		"Title": "The Godfather: Part II",
+		"Genre": "Crime",
+		"Duration": 202,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 11,
+		"Title": "The Dark Knight Rises",
+		"Genre": "Action",
+		"Duration": 164,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 12,
+		"Title": "The Lord of the Rings: The Two Towers",
+		"Genre": "Adventure",
+		"Duration": 179,
+		"Rating": "great"
+	},
+	{
+		"MovieID": 13,
+		"Title": "The Godfather: Part II",
+		"Genre": "Crime",
+		"Duration": 202,
+		"Rating": "great"
+	}
+]

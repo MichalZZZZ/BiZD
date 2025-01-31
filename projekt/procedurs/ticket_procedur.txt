@@ -1,0 +1,366 @@
+-- procedura dodawania biletu do bazy
+
+-- puste pola
+-- bilet o ID istnieje
+-- seans o ID nie istnieje
+-- klient o ID nie istnieje
+-- cena musi byc wieksza niz 0
+-- ilosc osob wieksza niz 0
+-- calkowita kwota wieksza niz 0
+-- zly format daty kupna biletu / data kupna jest wczesniejsza niz aktualna data
+-- brak mozliwosci dodania biletu na odbyty seans
+CREATE OR REPLACE PROCEDURE add_ticket(
+    p_ticket_id IN NUMBER,
+    p_showtime_id IN NUMBER,
+    p_customer_id IN NUMBER,
+    p_seat_numbers IN VARCHAR2,
+    p_price IN DECIMAL,
+    p_count_person IN NUMBER,
+    p_sum IN DECIMAL,
+    p_date_buy IN VARCHAR2
+)
+AS
+    v_ticket_string VARCHAR2(4000);
+    v_count NUMBER;
+    v_end_time TIMESTAMP;
+    v_customer_name VARCHAR2(4000);
+    v_showtime_movie_name VARCHAR2(4000);
+    v_date_buy TIMESTAMP;
+
+    e_showtime_not_found EXCEPTION;
+    e_customer_not_found EXCEPTION;
+    e_invalid_price EXCEPTION;
+    e_invalid_count_person EXCEPTION;
+    e_invalid_sum EXCEPTION;
+    e_invalid_date_buy EXCEPTION;
+    e_empty_data EXCEPTION;
+    e_ticket_exists EXCEPTION;
+    e_showtime_already_occurred EXCEPTION;
+
+    PRAGMA EXCEPTION_INIT(e_showtime_not_found, -20001);
+    PRAGMA EXCEPTION_INIT(e_customer_not_found, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_price, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_count_person, -20004);
+    PRAGMA EXCEPTION_INIT(e_invalid_sum, -20005);
+    PRAGMA EXCEPTION_INIT(e_invalid_date_buy, -20006);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20007);
+    PRAGMA EXCEPTION_INIT(e_ticket_exists, -20008);
+    PRAGMA EXCEPTION_INIT(e_showtime_already_occurred, -20009);
+
+BEGIN
+    IF p_showtime_id IS NULL OR p_customer_id IS NULL OR p_seat_numbers IS NULL OR 
+       p_price IS NULL OR p_count_person IS NULL OR p_sum IS NULL OR p_date_buy IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Ticket
+    WHERE TicketID = p_ticket_id;
+
+    IF v_count > 0 THEN
+        RAISE e_ticket_exists;
+    END IF;
+
+    SELECT EndTime INTO v_end_time
+    FROM Showtime
+    WHERE ShowtimeID = p_showtime_id;
+
+    IF v_end_time IS NULL THEN
+        RAISE e_showtime_not_found;
+    END IF;
+
+    IF v_end_time < CURRENT_TIMESTAMP THEN
+        RAISE e_showtime_already_occurred;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Customer
+    WHERE CustomerID = p_customer_id;
+
+    IF v_count = 0 THEN
+        RAISE e_customer_not_found;
+    END IF;
+
+    IF p_price <= 0 THEN
+        RAISE e_invalid_price;
+    END IF;
+
+    IF p_count_person <= 0 THEN
+        RAISE e_invalid_count_person;
+    END IF;
+
+    IF p_sum <= 0 OR p_sum <> p_price * p_count_person THEN
+        RAISE e_invalid_sum;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_date_buy, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$') THEN
+        RAISE e_invalid_date_buy;
+    END IF;
+
+    v_date_buy := TO_TIMESTAMP(p_date_buy, 'YYYY-MM-DD HH24:MI:SS');
+
+    IF v_date_buy < CURRENT_TIMESTAMP THEN
+        RAISE e_invalid_date_buy;
+    END IF;
+
+    SELECT Name INTO v_customer_name
+    FROM Customer
+    WHERE CustomerID = p_customer_id;
+
+    SELECT m.Title INTO v_showtime_movie_name
+    FROM Showtime s
+    JOIN Movie m ON s.MovieID = m.MovieID
+    WHERE s.ShowtimeID = p_showtime_id;
+
+    INSERT INTO Ticket (TicketID, ShowtimeID, CustomerID, SeatNumbers, Price, CountPerson, Sum, DateBuy) 
+    VALUES (p_ticket_id, p_showtime_id, p_customer_id, p_seat_numbers, p_price, p_count_person, p_sum, v_date_buy);
+
+    v_ticket_string := p_ticket_id || '; ' || p_showtime_id || '; ' || p_customer_id || '; ' || 
+                       p_seat_numbers || '; ' || p_price || '; ' || p_count_person || '; ' || 
+                       p_sum || '; ' || p_date_buy;
+
+    INSERT INTO ArchivesAddedTicket (TicketID, SeatNumbers, Price, CountPerson, Sum, DateBuy, AddedDate, ShowtimeMovieName, CustomerName) 
+    VALUES (p_ticket_id, p_seat_numbers, p_price, p_count_person, p_sum, v_date_buy, CURRENT_TIMESTAMP, v_showtime_movie_name, v_customer_name);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_ticket', v_ticket_string, 'Ticket', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_ticket_exists THEN
+        DBMS_OUTPUT.PUT_LINE('Error: TicketID ' || p_ticket_id || ' already exists.');
+        ROLLBACK;
+    WHEN e_showtime_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ShowtimeID ' || p_showtime_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_customer_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: CustomerID ' || p_customer_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_invalid_price THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Price must be greater than 0.');
+        ROLLBACK;
+    WHEN e_invalid_count_person THEN
+        DBMS_OUTPUT.PUT_LINE('Error: CountPerson must be greater than 0.');
+        ROLLBACK;
+    WHEN e_invalid_sum THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Sum must be greater than 0 and equal to Price * CountPerson.');
+        ROLLBACK;
+    WHEN e_invalid_date_buy THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid DateBuy format or DateBuy is earlier than the current time.');
+        ROLLBACK;
+    WHEN e_showtime_already_occurred THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cannot add a ticket for a showtime that has already occurred.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania biletu z bazy
+CREATE OR REPLACE PROCEDURE delete_ticket(
+    p_ticket_id IN NUMBER
+)
+AS
+    v_showtime_id INT;
+    v_end_time TIMESTAMP;
+    v_ticket_string VARCHAR2(4000);
+
+    v_customer_id NUMBER;
+    v_seat_numbers VARCHAR2(4000);
+    v_price DECIMAL(10, 2);
+    v_count_person NUMBER;
+    v_sum DECIMAL(10, 2);
+    v_date_buy TIMESTAMP;
+    v_showtime_movie_name VARCHAR2(4000);
+    v_customer_name VARCHAR2(4000);
+
+    e_ticket_not_found EXCEPTION;
+
+    PRAGMA EXCEPTION_INIT(e_ticket_not_found, -20001);
+
+BEGIN
+    BEGIN
+        SELECT ShowtimeID, CustomerID, SeatNumbers, Price, CountPerson, Sum, DateBuy
+        INTO v_showtime_id, v_customer_id, v_seat_numbers, v_price, v_count_person, v_sum, v_date_buy
+        FROM Ticket
+        WHERE TicketID = p_ticket_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_ticket_not_found;
+    END;
+
+    SELECT EndTime
+    INTO v_end_time
+    FROM Showtime
+    WHERE ShowtimeID = v_showtime_id;
+
+    SELECT m.Title INTO v_showtime_movie_name
+    FROM Showtime s
+    JOIN Movie m ON s.MovieID = m.MovieID
+    WHERE s.ShowtimeID = v_showtime_id;
+
+    SELECT Name INTO v_customer_name
+    FROM Customer
+    WHERE CustomerID = v_customer_id;
+
+    v_ticket_string := p_ticket_id || '; ' || v_showtime_id || '; ' || TO_CHAR(v_end_time, 'YYYY-MM-DD HH24:MI:SS');
+
+    INSERT INTO ArchivesDeletedTicket (TicketID, ShowtimeMovieName, CustomerName, SeatNumbers, Price, CountPerson, Sum, DateBuy, DeletedDate) VALUES (p_ticket_id, v_showtime_movie_name, v_customer_name, v_seat_numbers, v_price, v_count_person, v_sum, v_date_buy, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time) VALUES ('delete_ticket', v_ticket_string, 'Ticket', CURRENT_TIMESTAMP);
+
+    DELETE FROM Ticket
+    WHERE TicketID = p_ticket_id;
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_ticket_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Ticket with ID ' || p_ticket_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji biletu w bazie
+CREATE OR REPLACE PROCEDURE update_ticket(
+    p_ticket_id IN NUMBER,
+    p_new_showtime_id IN NUMBER,
+    p_new_customer_id IN NUMBER,
+    p_new_seat_numbers IN VARCHAR2,
+    p_new_price IN DECIMAL,
+    p_new_count_person IN NUMBER,
+    p_new_sum IN DECIMAL
+)
+AS
+    v_old_ticket_string VARCHAR2(4000);
+    v_new_ticket_string VARCHAR2(4000);
+    v_old_showtime_id INT;
+    v_end_time TIMESTAMP;
+    v_count NUMBER;
+
+    e_ticket_not_found EXCEPTION;
+    e_showtime_not_found EXCEPTION;
+    e_customer_not_found EXCEPTION;
+    e_invalid_data EXCEPTION;
+    e_empty_data EXCEPTION;
+
+    PRAGMA EXCEPTION_INIT(e_ticket_not_found, -20001);
+    PRAGMA EXCEPTION_INIT(e_showtime_not_found, -20002);
+    PRAGMA EXCEPTION_INIT(e_customer_not_found, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_data, -20004);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20005);
+
+BEGIN
+    IF p_new_showtime_id IS NULL OR p_new_customer_id IS NULL OR p_new_seat_numbers IS NULL OR p_new_price IS NULL OR p_new_count_person IS NULL OR p_new_sum IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    BEGIN
+        SELECT ShowtimeID
+        INTO v_old_showtime_id
+        FROM Ticket
+        WHERE TicketID = p_ticket_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_ticket_not_found;
+    END;
+
+    BEGIN
+        SELECT EndTime
+        INTO v_end_time
+        FROM Showtime
+        WHERE ShowtimeID = p_new_showtime_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_showtime_not_found;
+    END;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Customer
+    WHERE CustomerID = p_new_customer_id;
+
+    IF v_count = 0 THEN
+        RAISE e_customer_not_found;
+    END IF;
+
+    IF p_new_price <= 0 THEN
+        RAISE e_invalid_data;
+    END IF;
+
+    IF p_new_count_person <= 0 THEN
+        RAISE e_invalid_data;
+    END IF;
+
+    IF p_new_sum <> p_new_price * p_new_count_person THEN
+        RAISE e_invalid_data;
+    END IF;
+
+    v_old_ticket_string := p_ticket_id || '; ' || v_old_showtime_id || '; ' || p_new_customer_id || '; ' || p_new_seat_numbers || '; ' || p_new_price || '; ' || p_new_count_person || '; ' || p_new_sum;
+    v_new_ticket_string := p_ticket_id || '; ' || p_new_showtime_id || '; ' || p_new_customer_id || '; ' || p_new_seat_numbers || '; ' || p_new_price || '; ' || p_new_count_person || '; ' || p_new_sum;
+
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_ticket_string, v_new_ticket_string, 'Ticket', CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_ticket', v_new_ticket_string, 'Ticket', CURRENT_TIMESTAMP);
+
+    UPDATE Ticket
+    SET ShowtimeID = p_new_showtime_id,
+        CustomerID = p_new_customer_id,
+        SeatNumbers = p_new_seat_numbers,
+        Price = p_new_price,
+        CountPerson = p_new_count_person,
+        Sum = p_new_sum
+    WHERE TicketID = p_ticket_id;
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_ticket_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Ticket with ID ' || p_ticket_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_showtime_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ShowtimeID ' || p_new_showtime_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_customer_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: CustomerID ' || p_new_customer_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_invalid_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid data. Check Price, CountPerson, and Sum consistency.');
+        ROLLBACK;
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+
+
+BEGIN
+    add_ticket(57, 3, 1, 'B23, B24', 30, 3, 90, '2025-02-21 18:00:00');
+END;
+/
+
+BEGIN
+    delete_ticket(56);
+END;
+/
+
+BEGIN
+    update_ticket(2, 2, 1, 'B23, B24', 30, 3, 90);
+END;
+/

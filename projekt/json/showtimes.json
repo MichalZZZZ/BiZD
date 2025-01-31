@@ -1,0 +1,107 @@
+[
+	{
+		"ShowtimeID": 1,
+		"MovieID": 1,
+		"AuditoriumID": 1,
+		"StartTime": "2025-01-18 18:00:00",
+		"EndTime": "2025-01-18 20:16:00"
+	},
+	{
+		"ShowtimeID": 2,
+		"MovieID": 2,
+		"AuditoriumID": 2,
+		"StartTime": "2025-01-18 20:30:00",
+		"EndTime": "2025-01-18 22:58:00"
+	},
+	{
+		"ShowtimeID": 3,
+		"MovieID": 3,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-16 20:30:00",
+		"EndTime": "2025-02-16 22:58:00"
+	},
+	{
+		"ShowtimeID": 4,
+		"MovieID": 4,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-19 16:30:00",
+		"EndTime": "2025-02-19 18:00:00"
+	},
+	{
+		"ShowtimeID": 5,
+		"MovieID": 5,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-18 20:30:00",
+		"EndTime": "2025-02-18 22:58:00"
+	},
+	{
+		"ShowtimeID": 6,
+		"MovieID": 6,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-21 16:30:00",
+		"EndTime": "2025-02-21 18:00:00"
+	},
+	{
+		"ShowtimeID": 7,
+		"MovieID": 7,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-23 20:30:00",
+		"EndTime": "2025-02-23 22:58:00"
+	},
+	{
+		"ShowtimeID": 8,
+		"MovieID": 8,
+		"AuditoriumID": 2,
+		"StartTime": "2025-02-24 16:30:00",
+		"EndTime": "2025-02-24 18:00:00"
+	},
+	{
+		"ShowtimeID": 9,
+		"MovieID": 9,
+		"AuditoriumID": 1,
+		"StartTime": "2025-02-25 20:30:00",
+		"EndTime": "2025-02-25 22:58:00"
+	},
+	{
+		"ShowtimeID": 10,
+		"MovieID": 10,
+		"AuditoriumID": 1,
+		"StartTime": "2025-03-13 16:30:00",
+		"EndTime": "2025-03-13 18:00:00"
+	},
+	{
+		"ShowtimeID": 11,
+		"MovieID": 11,
+		"AuditoriumID": 2,
+		"StartTime": "2025-04-21 16:30:00",
+		"EndTime": "2025-04-21 18:00:00"
+	},
+	{
+		"ShowtimeID": 12,
+		"MovieID": 11,
+		"AuditoriumID": 2,
+		"StartTime": "2025-04-23 20:30:00",
+		"EndTime": "2025-04-23 22:58:00"
+	},
+	{
+		"ShowtimeID": 13,
+		"MovieID": 1,
+		"AuditoriumID": 2,
+		"StartTime": "2025-05-24 16:30:00",
+		"EndTime": "2025-05-24 18:00:00"
+	},
+	{
+		"ShowtimeID": 14,
+		"MovieID": 2,
+		"AuditoriumID": 1,
+		"StartTime": "2025-05-25 20:30:00",
+		"EndTime": "2025-05-25 22:58:00"
+	},
+	{
+		"ShowtimeID": 15,
+		"MovieID": 3,
+		"AuditoriumID": 1,
+		"StartTime": "2025-06-13 16:30:00",
+		"EndTime": "2025-06-13 18:00:00"
+	}
+]

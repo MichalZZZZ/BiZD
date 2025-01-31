@@ -1,0 +1,347 @@
+-- procedura dodawania seansu do bazy
+
+-- seans o ID już istnieje
+-- film nie istnieje
+-- sala nie istnieje
+-- start i endtime zły format
+-- czas zakonczenia filmu nie moze byc wczesniejszy niz rozpoczecia
+-- puste pola
+CREATE OR REPLACE PROCEDURE add_showtime(
+    p_showtime_id IN NUMBER,
+    p_movie_id IN NUMBER,
+    p_auditorium_id IN NUMBER,
+    p_start_time IN VARCHAR2,
+    p_end_time IN VARCHAR2
+)
+AS
+    v_showtime_string VARCHAR2(4000);
+    v_count NUMBER;
+    v_movie_name VARCHAR2(4000);
+    v_auditorium_name VARCHAR2(4000);
+    
+    e_invalid_movie EXCEPTION;
+    e_invalid_auditorium EXCEPTION;
+    e_invalid_start_time EXCEPTION;
+    e_invalid_end_time EXCEPTION;
+    e_invalid_time_order EXCEPTION;
+    e_empty_data EXCEPTION;
+    e_showtime_exists EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_invalid_movie, -20001);
+    PRAGMA EXCEPTION_INIT(e_invalid_auditorium, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_start_time, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_end_time, -20004);
+    PRAGMA EXCEPTION_INIT(e_invalid_time_order, -20006);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20005);
+    PRAGMA EXCEPTION_INIT(e_showtime_exists, -20007);
+    
+BEGIN
+    IF p_movie_id IS NULL OR p_auditorium_id IS NULL OR p_start_time IS NULL OR p_end_time IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Showtime
+    WHERE ShowtimeID = p_showtime_id;
+    
+    IF v_count > 0 THEN
+        RAISE e_showtime_exists;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Movie
+    WHERE MovieID = p_movie_id;
+    
+    IF v_count = 0 THEN
+        RAISE e_invalid_movie;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Auditorium
+    WHERE AuditoriumID = p_auditorium_id;
+    
+    IF v_count = 0 THEN
+        RAISE e_invalid_auditorium;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_start_time, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$') THEN
+        RAISE e_invalid_start_time;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_end_time, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$') THEN
+        RAISE e_invalid_end_time;
+    END IF;
+
+    IF TO_TIMESTAMP(p_start_time, 'YYYY-MM-DD HH24:MI:SS') > TO_TIMESTAMP(p_end_time, 'YYYY-MM-DD HH24:MI:SS') THEN
+        RAISE e_invalid_time_order;
+    END IF;
+
+    SELECT Title INTO v_movie_name
+    FROM Movie
+    WHERE MovieID = p_movie_id;
+
+    SELECT Name INTO v_auditorium_name
+    FROM Auditorium
+    WHERE AuditoriumID = p_auditorium_id;
+
+    INSERT INTO Showtime (ShowtimeID, MovieID, AuditoriumID, StartTime, EndTime)
+    VALUES (p_showtime_id, p_movie_id, p_auditorium_id, TO_TIMESTAMP(p_start_time, 'YYYY-MM-DD HH24:MI:SS'), TO_TIMESTAMP(p_end_time, 'YYYY-MM-DD HH24:MI:SS'));
+
+    v_showtime_string := p_showtime_id || '; ' || p_movie_id || '; ' || p_auditorium_id || '; ' || p_start_time || '; ' || p_end_time;
+
+    INSERT INTO ArchivesAddedShowtime (ShowtimeID, StartTime, EndTime, AddedDate, MovieName, AuditoriumName)
+    VALUES (p_showtime_id, TO_TIMESTAMP(p_start_time, 'YYYY-MM-DD HH24:MI:SS'), TO_TIMESTAMP(p_end_time, 'YYYY-MM-DD HH24:MI:SS'), CURRENT_TIMESTAMP, v_movie_name, v_auditorium_name);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_showtime', v_showtime_string, 'Showtime', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_showtime_exists THEN
+        DBMS_OUTPUT.PUT_LINE('Error: ShowtimeID ' || p_showtime_id || ' already exists.');
+        ROLLBACK;
+
+    WHEN e_invalid_movie THEN
+        DBMS_OUTPUT.PUT_LINE('Error: MovieID does not exist.');
+        ROLLBACK;
+    
+    WHEN e_invalid_auditorium THEN
+        DBMS_OUTPUT.PUT_LINE('Error: AuditoriumID does not exist.');
+        ROLLBACK;
+    
+    WHEN e_invalid_start_time THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid StartTime format. It should be YYYY-MM-DD HH24:MI:SS.');
+        ROLLBACK;
+    
+    WHEN e_invalid_end_time THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid EndTime format. It should be YYYY-MM-DD HH24:MI:SS.');
+        ROLLBACK;
+
+    WHEN e_invalid_time_order THEN
+        DBMS_OUTPUT.PUT_LINE('Error: StartTime cannot be later than EndTime.');
+        ROLLBACK;
+    
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania senasu z bazy
+CREATE OR REPLACE PROCEDURE delete_showtime(
+    p_showtime_id IN NUMBER
+)
+AS
+    v_movie_id INT;
+    v_auditorium_id INT;
+    v_start_time TIMESTAMP;
+    v_end_time TIMESTAMP;
+    v_showtime_string VARCHAR2(4000);
+    v_movie_name VARCHAR2(4000);
+    v_auditorium_name VARCHAR2(4000);
+    
+    e_showtime_not_found EXCEPTION;
+    e_showtime_in_use EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_showtime_not_found, -20001);
+    PRAGMA EXCEPTION_INIT(e_showtime_in_use, -2292);
+
+BEGIN
+    BEGIN
+        SELECT MovieID, AuditoriumID, StartTime, EndTime
+        INTO v_movie_id, v_auditorium_id, v_start_time, v_end_time
+        FROM Showtime
+        WHERE ShowtimeID = p_showtime_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_showtime_not_found;
+    END;
+
+    SELECT Title INTO v_movie_name
+    FROM Movie
+    WHERE MovieID = v_movie_id;
+
+    SELECT Name INTO v_auditorium_name
+    FROM Auditorium
+    WHERE AuditoriumID = v_auditorium_id;
+
+    v_showtime_string := p_showtime_id || '; ' || v_movie_id || '; ' || v_auditorium_id || '; ' || TO_CHAR(v_start_time, 'YYYY-MM-DD HH24:MI:SS') || '; ' || TO_CHAR(v_end_time, 'YYYY-MM-DD HH24:MI:SS');
+    
+    INSERT INTO ArchivesDeletedShowtime (ShowtimeID, StartTime, EndTime, DeletedDate, MovieName, AuditoriumName)
+    VALUES (p_showtime_id, v_start_time, v_end_time, CURRENT_TIMESTAMP, v_movie_name, v_auditorium_name);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('delete_showtime', v_showtime_string, 'Showtime', CURRENT_TIMESTAMP);
+
+    DELETE FROM Showtime
+    WHERE ShowtimeID = p_showtime_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_showtime_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Showtime with ID ' || p_showtime_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_showtime_in_use THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cannot delete showtime because it is referenced by tickets.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji senasu w bazie
+CREATE OR REPLACE PROCEDURE update_showtime(
+    p_showtime_id IN NUMBER,
+    p_new_movie_id IN NUMBER,
+    p_new_auditorium_id IN NUMBER,
+    p_new_start_time IN VARCHAR2,
+    p_new_end_time IN VARCHAR2
+)
+AS
+    v_old_movie_id INT;
+    v_old_auditorium_id INT;
+    v_old_start_time TIMESTAMP;
+    v_old_end_time TIMESTAMP;
+    
+    v_new_movie_id INT := p_new_movie_id;
+    v_new_auditorium_id INT := p_new_auditorium_id;
+    v_new_start_time TIMESTAMP;
+    v_new_end_time TIMESTAMP;
+    
+    v_old_showtime_string CLOB;
+    v_new_showtime_string CLOB;
+    
+    v_movie_count NUMBER;
+    v_auditorium_count NUMBER;
+    
+    e_showtime_not_found EXCEPTION;
+    e_empty_data EXCEPTION;
+    e_invalid_start_time EXCEPTION;
+    e_invalid_end_time EXCEPTION;
+    e_invalid_time_order EXCEPTION;
+    e_invalid_movie EXCEPTION;
+    e_invalid_auditorium EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_showtime_not_found, -20001);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_start_time, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_end_time, -20004);
+    PRAGMA EXCEPTION_INIT(e_invalid_time_order, -20005);
+    PRAGMA EXCEPTION_INIT(e_invalid_movie, -20006);
+    PRAGMA EXCEPTION_INIT(e_invalid_auditorium, -20007);
+
+BEGIN
+    IF p_new_movie_id IS NULL OR p_new_auditorium_id IS NULL OR p_new_start_time IS NULL OR p_new_end_time IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_new_start_time, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$') THEN
+        RAISE e_invalid_start_time;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_new_end_time, '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$') THEN
+        RAISE e_invalid_end_time;
+    END IF;
+
+    v_new_start_time := TO_TIMESTAMP(p_new_start_time, 'YYYY-MM-DD HH24:MI:SS');
+    v_new_end_time := TO_TIMESTAMP(p_new_end_time, 'YYYY-MM-DD HH24:MI:SS');
+
+    IF v_new_start_time > v_new_end_time THEN
+        RAISE e_invalid_time_order;
+    END IF;
+    
+    SELECT COUNT(*) INTO v_movie_count
+    FROM Movie
+    WHERE MovieID = p_new_movie_id;
+
+    IF v_movie_count = 0 THEN
+        RAISE e_invalid_movie;
+    END IF;
+    
+    SELECT COUNT(*) INTO v_auditorium_count
+    FROM Auditorium
+    WHERE AuditoriumID = p_new_auditorium_id;
+
+    IF v_auditorium_count = 0 THEN
+        RAISE e_invalid_auditorium;
+    END IF;
+
+    BEGIN
+        SELECT MovieID, AuditoriumID, StartTime, EndTime
+        INTO v_old_movie_id, v_old_auditorium_id, v_old_start_time, v_old_end_time
+        FROM Showtime
+        WHERE ShowtimeID = p_showtime_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_showtime_not_found;
+    END;
+
+    v_old_showtime_string := p_showtime_id || '; ' || v_old_movie_id || '; ' || v_old_auditorium_id || '; ' || TO_CHAR(v_old_start_time, 'YYYY-MM-DD HH24:MI:SS') || '; ' || TO_CHAR(v_old_end_time, 'YYYY-MM-DD HH24:MI:SS');
+    v_new_showtime_string := p_showtime_id || '; ' || v_new_movie_id || '; ' || v_new_auditorium_id || '; ' || TO_CHAR(v_new_start_time, 'YYYY-MM-DD HH24:MI:SS') || '; ' || TO_CHAR(v_new_end_time, 'YYYY-MM-DD HH24:MI:SS');
+    
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_showtime_string, v_new_showtime_string, 'Showtime', CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_showtime', v_new_showtime_string, 'Showtime', CURRENT_TIMESTAMP);
+    
+    UPDATE Showtime
+    SET MovieID = p_new_movie_id, AuditoriumID = p_new_auditorium_id, StartTime = v_new_start_time, EndTime = v_new_end_time
+    WHERE ShowtimeID = p_showtime_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_invalid_start_time THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid StartTime format. It should be YYYY-MM-DD HH24:MI:SS.');
+        ROLLBACK;
+    WHEN e_invalid_end_time THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid EndTime format. It should be YYYY-MM-DD HH24:MI:SS.');
+        ROLLBACK;
+    WHEN e_invalid_time_order THEN
+        DBMS_OUTPUT.PUT_LINE('Error: StartTime cannot be later than EndTime.');
+        ROLLBACK;
+    WHEN e_invalid_movie THEN
+        DBMS_OUTPUT.PUT_LINE('Error: MovieID ' || p_new_movie_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_invalid_auditorium THEN
+        DBMS_OUTPUT.PUT_LINE('Error: AuditoriumID ' || p_new_auditorium_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_showtime_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Showtime with ID ' || p_showtime_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+
+BEGIN
+    add_showtime(16, 1, 1, '2025-03-21 11:00:00', '2025-03-21 20:00:00');
+END;
+/
+
+BEGIN
+    delete_showtime(15);
+END;
+/
+
+BEGIN
+    update_showtime(14, 1, 1, '2025-03-21 18:00:00', '2025-03-21 20:00:00');
+END;
+/
+

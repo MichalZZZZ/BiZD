@@ -1,0 +1,212 @@
+-- procedura dodawnia filmu do bazy
+
+-- puste pola
+-- duration musi być większe od 0
+-- film o ID już istnieje
+CREATE OR REPLACE PROCEDURE add_movie(
+    p_movie_id IN NUMBER,
+    p_title IN VARCHAR2,
+    p_genre IN VARCHAR2,
+    p_duration IN INT,
+    p_rating IN VARCHAR2
+)
+AS
+    v_movie_string VARCHAR2(4000);
+    e_empty_data EXCEPTION;
+    e_invalid_duration EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_duration, -20003);
+BEGIN
+    IF p_title IS NULL OR p_genre IS NULL OR p_duration IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF p_duration <= 0 THEN
+        RAISE e_invalid_duration;
+    END IF;
+
+    INSERT INTO Movie (MovieID, Title, Genre, Duration, Rating)
+    VALUES (p_movie_id, p_title, p_genre, p_duration, p_rating);
+
+    v_movie_string := p_movie_id || '; ' || p_title || '; ' || p_genre || '; ' || p_duration || '; ' || p_rating;
+
+    INSERT INTO ArchivesAddedMovie (MovieID, Title, Genre, Duration, Rating, AddedDate)
+    VALUES (p_movie_id, p_title, p_genre, p_duration, p_rating, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_movie', v_movie_string, 'Movie', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_invalid_duration THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid movie duration.');
+        ROLLBACK;
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Movie with this ID already exists.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania filmu z bazy
+CREATE OR REPLACE PROCEDURE delete_movie(
+    p_movie_id IN NUMBER
+)
+AS
+    v_movie_title VARCHAR2(255);
+    v_movie_genre VARCHAR2(50);
+    v_movie_duration INT;
+    v_movie_rating VARCHAR2(10);
+    v_movie_string VARCHAR2(4000);
+    e_movie_not_found EXCEPTION;
+    e_foreign_key_violation EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_movie_not_found, -20003);
+    PRAGMA EXCEPTION_INIT(e_foreign_key_violation, -2292);
+BEGIN
+    BEGIN
+        SELECT title, genre, duration, rating
+        INTO v_movie_title, v_movie_genre, v_movie_duration, v_movie_rating
+        FROM Movie
+        WHERE MovieID = p_movie_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_movie_not_found;
+    END;
+
+    v_movie_string := p_movie_id || '; ' || v_movie_title || '; ' || v_movie_genre || '; ' || v_movie_duration || '; ' || v_movie_rating;
+
+    INSERT INTO ArchivesDeletedMovie (MovieID, Title, Genre, Duration, Rating, DeletedDate)
+    VALUES (p_movie_id, v_movie_title, v_movie_genre, v_movie_duration, v_movie_rating, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('delete_movie', v_movie_string, 'Movie', CURRENT_TIMESTAMP);
+
+    BEGIN
+        DELETE FROM Showtime
+        WHERE MovieID = p_movie_id;
+    EXCEPTION
+        WHEN OTHERS THEN
+            RAISE e_foreign_key_violation;
+    END;
+
+    DELETE FROM Movie
+    WHERE MovieID = p_movie_id;
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_movie_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Movie with ID ' || p_movie_id || ' does not exist.');
+        ROLLBACK;
+    WHEN e_foreign_key_violation THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cannot delete the movie because there are dependent records in the Showtime table.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji filmu w bazie
+CREATE OR REPLACE PROCEDURE update_movie(
+    p_movie_id IN NUMBER,
+    p_new_title IN VARCHAR2,
+    p_new_genre IN VARCHAR2,
+    p_new_duration IN INT,
+    p_new_rating IN VARCHAR2
+)
+AS
+    v_old_title VARCHAR2(255);
+    v_old_genre VARCHAR2(50);
+    v_old_duration INT;
+    v_old_rating VARCHAR2(10);
+    
+    v_new_title VARCHAR2(255) := p_new_title;
+    v_new_genre VARCHAR2(50) := p_new_genre;
+    v_new_duration INT := p_new_duration;
+    v_new_rating VARCHAR2(10) := p_new_rating;
+    
+    v_old_movie_string CLOB;
+    v_new_movie_string CLOB;
+    
+    e_empty_data EXCEPTION;
+    e_movie_not_found EXCEPTION;
+    e_invalid_duration EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+    PRAGMA EXCEPTION_INIT(e_movie_not_found, -20003);
+
+BEGIN
+    IF p_new_title IS NULL OR p_new_genre IS NULL OR p_new_duration IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF p_new_duration <= 0 THEN
+        RAISE e_invalid_duration;
+    END IF;
+
+    BEGIN
+        SELECT title, genre, duration, rating
+        INTO v_old_title, v_old_genre, v_old_duration, v_old_rating
+        FROM Movie
+        WHERE MovieID = p_movie_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_movie_not_found;
+    END;
+
+    v_old_movie_string := p_movie_id || '; ' || v_old_title || '; ' || v_old_genre || '; ' || v_old_duration || '; ' || v_old_rating;
+    v_new_movie_string := p_movie_id || '; ' || v_new_title || '; ' || v_new_genre || '; ' || v_new_duration || '; ' || v_new_rating;
+    
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_movie_string, v_new_movie_string, 'Movie', CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_movie', v_new_movie_string, 'Movie', CURRENT_TIMESTAMP);
+    
+    UPDATE Movie
+    SET title = p_new_title, genre = p_new_genre, duration = p_new_duration, rating = p_new_rating
+    WHERE MovieID = p_movie_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_invalid_duration THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid movie duration.');
+        ROLLBACK;
+    WHEN e_movie_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Movie with ID ' || p_movie_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+
+BEGIN
+    add_movie(14, 'title', 'Sci-Fi', 122, 'good');
+END;
+/
+
+BEGIN
+    delete_movie(13);
+END;
+/
+
+BEGIN
+    update_movie(12, 'update title', 'update genre', 100, 'update');
+END;
+/

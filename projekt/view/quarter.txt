@@ -1,0 +1,11 @@
+CREATE VIEW View_QuarterTicketSales_2024 AS
+SELECT YearQuarter, TotalTicketsSold 
+FROM QuarterlyTicketSales
+WHERE SUBSTR(YearQuarter, 1, 4) = '2024'
+ORDER BY YearQuarter;
+
+CREATE VIEW View_QuarterTotalRevenue_2024 AS
+SELECT YearQuarter, TotalRevenue 
+FROM QuarterlyTicketSales
+WHERE SUBSTR(YearQuarter, 1, 4) = '2024'
+ORDER BY YearQuarter;

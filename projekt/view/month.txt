@@ -1,0 +1,9 @@
+CREATE VIEW View_MonthlyTicketSales_2024 AS
+SELECT YearMonth, TotalTicketsSold 
+FROM MonthlyTicketSales
+WHERE SUBSTR(YearMonth, 1, 4) = '2024';
+
+CREATE VIEW View_MonthlyTotalRevenue_2024 AS
+SELECT YearMonth, TotalRevenue 
+FROM MonthlyTicketSales
+WHERE SUBSTR(YearMonth, 1, 4) = '2024';

@@ -1,0 +1,62 @@
+[
+	{
+		"CustomerID": 1,
+		"Name": "John Doe",
+		"Email": "john.doe@example.com",
+		"Phone": "508-000-111"
+	},
+	{
+		"CustomerID": 2,
+		"Name": "Jane Smith",
+		"Email": "jane.smith@example.com",
+		"Phone": "554-000-222"
+	},
+	{
+		"CustomerID": 3,
+		"Name": "Custom Err",
+		"Email": "cust.cust@example.com",
+		"Phone": "443-166-954"
+	},
+	{
+		"CustomerID": 4,
+		"Name": "Test Test",
+		"Email": "testtest@example.com",
+		"Phone": "123-456-789"
+	},
+	{
+		"CustomerID": 5,
+		"Name": "Test 1",
+		"Email": "test1@example.com",
+		"Phone": "543-166-954"
+	},
+	{
+		"CustomerID": 6,
+		"Name": "Test 2",
+		"Email": "test2@example.com",
+		"Phone": "623-456-789"
+	},
+	{
+		"CustomerID": 7,
+		"Name": "Test 3",
+		"Email": "test3@example.com",
+		"Phone": "743-166-954"
+	},
+	{
+		"CustomerID": 8,
+		"Name": "Test 4",
+		"Email": "test4@example.com",
+		"Phone": "823-456-789"
+	},
+	{
+		"CustomerID": 9,
+		"Name": "Test 5",
+		"Email": "test5@example.com",
+		"Phone": "643-466-954"
+	},
+	{
+		"CustomerID": 10,
+		"Name": "Test 6",
+		"Email": "test6@example.com",
+		"Phone": "623-416-789"
+	}
+]

@@ -1,0 +1,562 @@
+[
+	{
+		"TicketID": 1,
+		"ShowtimeID": 1,
+		"CustomerID": 1,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-01-18 20:30:00"
+	},
+	{
+		"TicketID": 2,
+		"ShowtimeID": 2,
+		"CustomerID": 2,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-01-18 20:30:00"
+	},
+	{
+		"TicketID": 3,
+		"ShowtimeID": 1,
+		"CustomerID": 2,
+		"SeatNumbers": "C1,C2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2025-01-31 18:30:00"
+	},
+	{
+		"TicketID": 4,
+		"ShowtimeID": 2,
+		"CustomerID": 1,
+		"SeatNumbers": "D1,D2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2025-01-31 18:30:00"
+	},
+	{
+		"TicketID": 5,
+		"ShowtimeID": 2,
+		"CustomerID": 3,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-02-02 18:30:00"
+	},
+	{
+		"TicketID": 6,
+		"ShowtimeID": 1,
+		"CustomerID": 3,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-02-10 18:30:00"
+	},
+	{
+		"TicketID": 7,
+		"ShowtimeID": 1,
+		"CustomerID": 3,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-03-18 20:30:00"
+	},
+	{
+		"TicketID": 8,
+		"ShowtimeID": 3,
+		"CustomerID": 3,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-03-18 20:30:00"
+	},
+	{
+		"TicketID": 9,
+		"ShowtimeID": 3,
+		"CustomerID": 4,
+		"SeatNumbers": "C1,C2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2025-03-12 18:30:00"
+	},
+	{
+		"TicketID": 10,
+		"ShowtimeID": 3,
+		"CustomerID": 4,
+		"SeatNumbers": "D1,D2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2025-03-30 18:30:00"
+	},
+	{
+		"TicketID": 11,
+		"ShowtimeID": 4,
+		"CustomerID": 4,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-04-04 14:30:00"
+	},
+	{
+		"TicketID": 12,
+		"ShowtimeID": 4,
+		"CustomerID": 4,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-05-10 18:30:00"
+	},
+	{
+		"TicketID": 13,
+		"ShowtimeID": 4,
+		"CustomerID": 4,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-05-18 20:30:00"
+	},
+	{
+		"TicketID": 14,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-06-18 20:30:00"
+	},
+	{
+		"TicketID": 15,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "C1,C2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2025-06-29 18:30:00"
+	},
+	{
+		"TicketID": 16,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "D1,D2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2025-06-30 18:30:00"
+	},
+	{
+		"TicketID": 17,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-06-02 18:30:00"
+	},
+	{
+		"TicketID": 18,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-07-10 18:30:00"
+	},
+	{
+		"TicketID": 19,
+		"ShowtimeID": 5,
+		"CustomerID": 5,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-07-18 20:30:00"
+	},
+	{
+		"TicketID": 20,
+		"ShowtimeID": 6,
+		"CustomerID": 5,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-08-18 20:30:00"
+	},
+	{
+		"TicketID": 21,
+		"ShowtimeID": 6,
+		"CustomerID": 5,
+		"SeatNumbers": "C1,C2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2025-09-12 18:30:00"
+	},
+	{
+		"TicketID": 22,
+		"ShowtimeID": 6,
+		"CustomerID": 5,
+		"SeatNumbers": "D1,D2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2025-09-30 18:30:00"
+	},
+	{
+		"TicketID": 23,
+		"ShowtimeID": 6,
+		"CustomerID": 6,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-09-04 14:30:00"
+	},
+	{
+		"TicketID": 24,
+		"ShowtimeID": 6,
+		"CustomerID": 6,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-09-10 18:30:00"
+	},
+	{
+		"TicketID": 25,
+		"ShowtimeID": 6,
+		"CustomerID": 6,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-10-02 18:30:00"
+	},
+	{
+		"TicketID": 26,
+		"ShowtimeID": 6,
+		"CustomerID": 6,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-10-10 18:30:00"
+	},
+	{
+		"TicketID": 27,
+		"ShowtimeID": 7,
+		"CustomerID": 7,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-11-18 20:30:00"
+	},
+	{
+		"TicketID": 28,
+		"ShowtimeID": 7,
+		"CustomerID": 7,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-11-18 20:30:00"
+	},
+	{
+		"TicketID": 29,
+		"ShowtimeID": 7,
+		"CustomerID": 7,
+		"SeatNumbers": "C1,C2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2025-11-12 18:30:00"
+	},
+	{
+		"TicketID": 30,
+		"ShowtimeID": 7,
+		"CustomerID": 8,
+		"SeatNumbers": "D1,D2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2025-12-30 18:30:00"
+	},
+	{
+		"TicketID": 31,
+		"ShowtimeID": 7,
+		"CustomerID": 8,
+		"SeatNumbers": "E1,E2",
+		"Price": 40.0,
+		"CountPerson": 2,
+		"Sum": 80.0,
+		"DateBuy": "2025-12-04 14:30:00"
+	},
+	{
+		"TicketID": 32,
+		"ShowtimeID": 7,
+		"CustomerID": 8,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2025-12-10 18:30:00"
+	},
+	{
+		"TicketID": 33,
+		"ShowtimeID": 7,
+		"CustomerID": 8,
+		"SeatNumbers": "F1,F2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2024-12-10 18:30:00"
+	},
+	{
+		"TicketID": 34,
+		"ShowtimeID": 7,
+		"CustomerID": 1,
+		"SeatNumbers": "F1,F2",
+		"Price": 40.0,
+		"CountPerson": 4,
+		"Sum": 160.0,
+		"DateBuy": "2024-12-11 18:30:00"
+	},
+	{
+		"TicketID": 35,
+		"ShowtimeID": 7,
+		"CustomerID": 1,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 3,
+		"Sum": 135.0,
+		"DateBuy": "2024-11-10 18:30:00"
+	},
+	{
+		"TicketID": 36,
+		"ShowtimeID": 7,
+		"CustomerID": 2,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-11-11 18:30:00"
+	},
+	{
+		"TicketID": 37,
+		"ShowtimeID": 8,
+		"CustomerID": 3,
+		"SeatNumbers": "F1,F2",
+		"Price": 40.0,
+		"CountPerson": 3,
+		"Sum": 120.0,
+		"DateBuy": "2024-10-10 18:30:00"
+	},
+	{
+		"TicketID": 38,
+		"ShowtimeID": 8,
+		"CustomerID": 3,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-10-11 18:30:00"
+	},
+	{
+		"TicketID": 39,
+		"ShowtimeID": 8,
+		"CustomerID": 3,
+		"SeatNumbers": "F1,F2",
+		"Price": 50.0,
+		"CountPerson": 3,
+		"Sum": 150.0,
+		"DateBuy": "2024-10-09 18:30:00"
+	},
+	{
+		"TicketID": 40,
+		"ShowtimeID": 8,
+		"CustomerID": 4,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-09-09 18:30:00"
+	},
+	{
+		"TicketID": 41,
+		"ShowtimeID": 9,
+		"CustomerID": 4,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 3,
+		"Sum": 135.0,
+		"DateBuy": "2024-08-08 18:30:00"
+	},
+	{
+		"TicketID": 42,
+		"ShowtimeID": 9,
+		"CustomerID": 4,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 1,
+		"Sum": 45.0,
+		"DateBuy": "2024-08-08 18:30:00"
+	},
+	{
+		"TicketID": 43,
+		"ShowtimeID": 10,
+		"CustomerID": 5,
+		"SeatNumbers": "F1,F2",
+		"Price": 40.0,
+		"CountPerson": 8,
+		"Sum": 320.0,
+		"DateBuy": "2024-04-07 18:30:00"
+	},
+	{
+		"TicketID": 44,
+		"ShowtimeID": 10,
+		"CustomerID": 6,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-07-07 18:30:00"
+	},
+	{
+		"TicketID": 45,
+		"ShowtimeID": 11,
+		"CustomerID": 2,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 1,
+		"Sum": 45.0,
+		"DateBuy": "2024-01-06 18:30:00"
+	},
+	{
+		"TicketID": 46,
+		"ShowtimeID": 12,
+		"CustomerID": 7,
+		"SeatNumbers": "F1,F2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2024-06-06 18:30:00"
+	},
+	{
+		"TicketID": 47,
+		"ShowtimeID": 12,
+		"CustomerID": 7,
+		"SeatNumbers": "F1,F2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2024-05-05 18:30:00"
+	},
+	{
+		"TicketID": 48,
+		"ShowtimeID": 11,
+		"CustomerID": 8,
+		"SeatNumbers": "F1,F2",
+		"Price": 35.0,
+		"CountPerson": 2,
+		"Sum": 70.0,
+		"DateBuy": "2024-12-05 18:30:00"
+	},
+	{
+		"TicketID": 49,
+		"ShowtimeID": 13,
+		"CustomerID": 8,
+		"SeatNumbers": "F1,F2",
+		"Price": 40.0,
+		"CountPerson": 3,
+		"Sum": 120.0,
+		"DateBuy": "2024-04-04 18:30:00"
+	},
+	{
+		"TicketID": 50,
+		"ShowtimeID": 13,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 40.0,
+		"CountPerson": 1,
+		"Sum": 40.0,
+		"DateBuy": "2024-04-04 18:30:00"
+	},
+	{
+		"TicketID": 51,
+		"ShowtimeID": 13,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-03-03 18:30:00"
+	},
+	{
+		"TicketID": 52,
+		"ShowtimeID": 10,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 4,
+		"Sum": 180.0,
+		"DateBuy": "2024-03-03 18:30:00"
+	},
+	{
+		"TicketID": 53,
+		"ShowtimeID": 11,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 2,
+		"Sum": 90.0,
+		"DateBuy": "2024-02-02 18:30:00"
+	},
+	{
+		"TicketID": 54,
+		"ShowtimeID": 9,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 3,
+		"Sum": 135.0,
+		"DateBuy": "2024-02-02 18:30:00"
+	},
+	{
+		"TicketID": 55,
+		"ShowtimeID": 8,
+		"CustomerID": 9,
+		"SeatNumbers": "F1,F2",
+		"Price": 30.0,
+		"CountPerson": 2,
+		"Sum": 60.0,
+		"DateBuy": "2024-01-01 18:30:00"
+	},
+	{
+		"TicketID": 56,
+		"ShowtimeID": 7,
+		"CustomerID": 7,
+		"SeatNumbers": "F1,F2",
+		"Price": 45.0,
+		"CountPerson": 1,
+		"Sum": 45.0,
+		"DateBuy": "2024-01-01 18:30:00"
+	}
+]

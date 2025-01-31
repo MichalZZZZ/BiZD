@@ -1,0 +1,66 @@
+-- ilosc biletow sprzedanych na film "Inception"
+SELECT 
+    m.Title,
+    COUNT(t.TicketID) AS TicketCount
+FROM 
+    Ticket t
+JOIN 
+    Showtime s ON t.ShowtimeID = s.ShowtimeID
+JOIN 
+    Movie m ON s.MovieID = m.MovieID
+WHERE
+    m.Title = 'Inception'
+GROUP BY
+    m.Title;
+
+
+
+-- ilosc biletow sprzedanych w danym dniu na dany film
+SELECT
+    COUNT(t.TicketID) AS TicketCount,
+    m.Title AS MovieTitle,
+    TRUNC(TO_DATE(:bind_date, 'YYYY-MM-DD')) AS Day 
+FROM 
+    Ticket t
+JOIN 
+    Showtime s ON t.ShowtimeID = s.ShowtimeID
+JOIN 
+    Movie m ON s.MovieID = m.MovieID
+WHERE
+    TRUNC(t.DateBuy) = TRUNC(TO_DATE(:bind_date, 'YYYY-MM-DD'))
+GROUP BY 
+    m.Title, TRUNC(:bind_date, 'YYYY-MM-DD');
+
+
+
+-- ranking klientów, którzy wydali najwięcej
+SELECT 
+    t.CustomerID,
+    c.Name AS CustomerName,
+    SUM(t.Sum) AS TotalSpent,
+    RANK() OVER (ORDER BY SUM(t.Sum) DESC) AS CustomerRank
+FROM 
+    Ticket t
+JOIN 
+    Customer c ON t.CustomerID = c.CustomerID
+GROUP BY 
+    t.CustomerID, c.Name;
+
+
+
+-- średnia ilość osób na filmach
+SELECT 
+    m.MovieID,
+    m.Title AS MovieTitle,
+    AVG(t.CountPerson) AS AvgPersonsPerMovie
+FROM 
+    Ticket t
+JOIN 
+    Showtime s ON t.ShowtimeID = s.ShowtimeID
+JOIN 
+    Movie m ON s.MovieID = m.MovieID
+GROUP BY 
+    m.MovieID, m.Title
+ORDER BY 
+    AvgPersonsPerMovie DESC;
+

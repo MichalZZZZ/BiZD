@@ -1,0 +1,244 @@
+-- procedura dodawania sali do bazy
+
+-- puste pola
+-- capacity musi być większe niż 0
+-- kino nie istnieje
+-- sala o ID już istnieje
+CREATE OR REPLACE PROCEDURE add_auditorium(
+    p_auditorium_id IN NUMBER,
+    p_cinema_id IN NUMBER,
+    p_name IN VARCHAR2,
+    p_capacity IN NUMBER
+)
+AS
+    v_auditorium_string VARCHAR2(4000);
+    v_count NUMBER;
+    v_cinema_name VARCHAR2(255);
+    e_empty_data EXCEPTION;
+    e_invalid_capacity EXCEPTION;
+    e_invalid_cinema EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_capacity, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_cinema, -20005);
+BEGIN
+    IF p_name IS NULL OR p_cinema_id IS NULL OR p_capacity IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF p_capacity <= 0 THEN
+        RAISE e_invalid_capacity;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Cinema
+    WHERE CinemaID = p_cinema_id;
+
+    IF v_count = 0 THEN
+        RAISE e_invalid_cinema;
+    END IF;
+
+    SELECT Name INTO v_cinema_name
+    FROM Cinema
+    WHERE CinemaID = p_cinema_id;
+
+    INSERT INTO Auditorium (AuditoriumID, CinemaID, Name, Capacity)
+    VALUES (p_auditorium_id, p_cinema_id, p_name, p_capacity);
+
+    v_auditorium_string := p_auditorium_id || '; ' || p_cinema_id || '; ' || p_name || '; ' || p_capacity;
+
+    INSERT INTO ArchivesAddedAuditorium (AuditoriumID, Name, Capacity, AddedDate, CinemaName)
+    VALUES (p_auditorium_id, p_name, p_capacity, CURRENT_TIMESTAMP, v_cinema_name);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_auditorium', v_auditorium_string, 'Auditorium', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+
+    WHEN e_invalid_capacity THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Capacity must be a positive number.');
+        ROLLBACK;
+
+    WHEN e_invalid_cinema THEN
+        DBMS_OUTPUT.PUT_LINE('Error: CinemaID does not exist.');
+        ROLLBACK;
+
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Auditorium with this ID already exists.');
+        ROLLBACK;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania sali z bazy
+CREATE OR REPLACE PROCEDURE delete_auditorium(
+    p_auditorium_id IN NUMBER
+)
+AS
+    v_auditorium_name VARCHAR2(255);
+    v_auditorium_capacity INT;
+    v_cinema_id INT;
+    v_cinema_name VARCHAR2(255);
+    v_auditorium_string VARCHAR2(4000);
+    e_auditorium_not_found EXCEPTION;
+    e_invalid_cinema EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_auditorium_not_found, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_cinema, -20004);
+BEGIN
+    BEGIN
+        SELECT Name, Capacity, CinemaID
+        INTO v_auditorium_name, v_auditorium_capacity, v_cinema_id
+        FROM Auditorium
+        WHERE AuditoriumID = p_auditorium_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_auditorium_not_found;
+    END;
+
+    SELECT Name INTO v_cinema_name
+    FROM Cinema
+    WHERE CinemaID = v_cinema_id;
+
+    v_auditorium_string := TO_CHAR(p_auditorium_id) || '; ' || TO_CHAR(v_cinema_id) || '; ' || v_auditorium_name || TO_CHAR(v_auditorium_capacity) || '; ';
+
+    INSERT INTO ArchivesDeletedAuditorium(AuditoriumID, CinemaName, Name, Capacity, DeletedDate)
+    VALUES (p_auditorium_id, v_cinema_name, v_auditorium_name, v_auditorium_capacity, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('delete_auditorium', v_auditorium_string, 'Auditorium', CURRENT_TIMESTAMP);
+
+    DELETE FROM Auditorium
+    WHERE AuditoriumID = p_auditorium_id;
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_auditorium_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Auditorium with ID ' || p_auditorium_id || ' does not exist.');
+        ROLLBACK;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji sali w bazie
+CREATE OR REPLACE PROCEDURE update_auditorium(
+    p_auditorium_id IN NUMBER,
+    p_new_name IN VARCHAR2,
+    p_new_capacity IN NUMBER
+)
+AS
+    v_old_name VARCHAR2(255);
+    v_old_capacity INT;
+    v_cinema_id INT;
+    
+    v_new_name VARCHAR2(255) := p_new_name;
+    v_new_capacity INT := p_new_capacity;
+    
+    v_old_auditorium_string CLOB;
+    v_new_auditorium_string CLOB;
+    
+    v_count NUMBER;
+    
+    e_empty_data EXCEPTION;
+    e_auditorium_not_found EXCEPTION;
+    e_invalid_cinema EXCEPTION;
+    e_invalid_capacity EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20001);
+    PRAGMA EXCEPTION_INIT(e_auditorium_not_found, -20002);
+    PRAGMA EXCEPTION_INIT(e_invalid_cinema, -20003);
+    PRAGMA EXCEPTION_INIT(e_invalid_capacity, -20004);
+
+BEGIN
+    IF p_new_name IS NULL OR p_new_capacity IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    BEGIN
+        SELECT Name, Capacity, CinemaID
+        INTO v_old_name, v_old_capacity, v_cinema_id
+        FROM Auditorium
+        WHERE AuditoriumID = p_auditorium_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_auditorium_not_found;
+    END;
+
+    IF p_new_capacity <= 0 THEN
+        RAISE e_invalid_capacity;
+    END IF;
+
+    SELECT COUNT(*) INTO v_count
+    FROM Cinema
+    WHERE CinemaID = v_cinema_id;
+
+    IF v_count = 0 THEN
+        RAISE e_invalid_cinema;
+    END IF;
+
+    v_old_auditorium_string := p_auditorium_id || '; ' || v_old_name || '; ' || v_old_capacity || '; ' || v_cinema_id;
+    v_new_auditorium_string := p_auditorium_id || '; ' || v_new_name || '; ' || v_new_capacity || '; ' || v_cinema_id;
+
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_auditorium_string, v_new_auditorium_string, 'Auditorium', CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_auditorium', v_new_auditorium_string, 'Auditorium', CURRENT_TIMESTAMP);
+
+    UPDATE Auditorium
+    SET Name = p_new_name, Capacity = p_new_capacity
+    WHERE AuditoriumID = p_auditorium_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    
+    WHEN e_auditorium_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Auditorium with ID ' || p_auditorium_id || ' does not exist.');
+        ROLLBACK;
+    
+    WHEN e_invalid_cinema THEN
+        DBMS_OUTPUT.PUT_LINE('Error: CinemaID does not exist.');
+        ROLLBACK;
+
+    WHEN e_invalid_capacity THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Capacity must be a positive number.');
+        ROLLBACK;
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+
+BEGIN
+    add_auditorium(4, 1, 'ttt', 120);
+END;
+/
+
+BEGIN
+    delete_auditorium(3);
+END;
+/
+
+BEGIN
+    update_auditorium(2, 'name', 100);
+END;
+/

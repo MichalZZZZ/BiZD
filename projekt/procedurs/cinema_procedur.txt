@@ -1,0 +1,195 @@
+--procedura dodawania kina do bazy
+
+-- puste pola
+-- zły format numeru telefonu
+-- kino o ID istnieje
+CREATE OR REPLACE PROCEDURE add_cinema(
+    p_cinema_id IN NUMBER,
+    p_name IN VARCHAR2,
+    p_location IN VARCHAR2,
+    p_phone IN VARCHAR2
+)
+AS
+    v_cinema_string VARCHAR2(4000);
+    e_invalid_phone EXCEPTION;
+    e_empty_data EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_invalid_phone, -20001);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+BEGIN
+    IF p_name IS NULL OR p_location IS NULL OR p_phone IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_phone, '^\d{2}-\d{2}-\d{3}$') THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Invalid phone number format.');
+    END IF;
+
+    INSERT INTO Cinema (CinemaID, Name, Location, Phone)
+    VALUES (p_cinema_id, p_name, p_location, p_phone);
+
+    v_cinema_string := p_cinema_id || '; ' || p_name || '; ' || p_location || '; ' || p_phone;
+
+    INSERT INTO ArchivesAddedCinema (CinemaID, Name, Location, Phone, AddedDate)
+    VALUES (p_cinema_id, p_name, p_location, p_phone, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_cinema', v_cinema_string, 'Cinema', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_invalid_phone THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid phone number format.');
+        ROLLBACK;
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cinema with this ID already exists.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania kina z bazy
+CREATE OR REPLACE PROCEDURE delete_cinema(
+    p_cinema_id IN NUMBER
+)
+AS
+    v_cinema_name VARCHAR2(255);
+    v_cinema_location VARCHAR2(255);
+    v_cinema_phone VARCHAR2(20);
+    v_cinema_string VARCHAR2(4000);
+    e_cinema_not_found EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_cinema_not_found, -20003);
+BEGIN
+    BEGIN
+        SELECT name, location, phone
+        INTO v_cinema_name, v_cinema_location, v_cinema_phone
+        FROM Cinema
+        WHERE CinemaID = p_cinema_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_cinema_not_found;
+    END;
+
+    v_cinema_string := p_cinema_id || '; ' || v_cinema_name || '; ' || v_cinema_location || '; ' || v_cinema_phone;
+    
+    INSERT INTO ArchivesDeletedCinema (CinemaID, Name, Location, Phone, DeletedDate)
+    VALUES (p_cinema_id, v_cinema_name, v_cinema_location, v_cinema_phone, CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('delete_cinema', v_cinema_string, 'Cinema', CURRENT_TIMESTAMP);
+
+    DELETE FROM Cinema
+    WHERE CinemaID = p_cinema_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_cinema_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cinema with ID ' || p_cinema_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji kina w bazie
+CREATE OR REPLACE PROCEDURE update_cinema(
+    p_cinema_id IN NUMBER,
+    p_new_name IN VARCHAR2,
+    p_new_location IN VARCHAR2,
+    p_new_phone IN VARCHAR2
+)
+AS
+    v_old_name VARCHAR2(255);
+    v_old_location VARCHAR2(255);
+    v_old_phone VARCHAR2(20);
+    
+    v_new_name VARCHAR2(255) := p_new_name;
+    v_new_location VARCHAR2(255) := p_new_location;
+    v_new_phone VARCHAR2(20) := p_new_phone;
+    
+    v_old_cinema_string CLOB;
+    v_new_cinema_string CLOB;
+    
+    e_invalid_phone EXCEPTION;
+    e_empty_data EXCEPTION;
+    e_cinema_not_found EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_invalid_phone, -20001);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20002);
+    PRAGMA EXCEPTION_INIT(e_cinema_not_found, -20003);
+
+BEGIN
+    IF p_new_name IS NULL OR p_new_location IS NULL OR p_new_phone IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_new_phone, '^\d{2}-\d{2}-\d{3}$') THEN
+        RAISE e_invalid_phone;
+    END IF;
+    
+    BEGIN
+        SELECT name, location, phone
+        INTO v_old_name, v_old_location, v_old_phone
+        FROM Cinema
+        WHERE CinemaID = p_cinema_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_cinema_not_found;
+    END;
+
+    v_old_cinema_string := p_cinema_id || '; ' || v_old_name || '; ' || v_old_location || '; ' || v_old_phone;
+    v_new_cinema_string := p_cinema_id || '; ' || v_new_name || '; ' || v_new_location || '; ' || v_new_phone;
+    
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_cinema_string, v_new_cinema_string, 'Cinema', CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_cinema', v_new_cinema_string, 'Cinema', CURRENT_TIMESTAMP);
+    
+    UPDATE Cinema
+    SET name = p_new_name, location = p_new_location, phone = p_new_phone
+    WHERE CinemaID = p_cinema_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_invalid_phone THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid phone number format.');
+        ROLLBACK;
+    WHEN e_cinema_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Cinema with ID ' || p_cinema_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- wywołanie procedur
+BEGIN
+    add_cinema(3, 'CinemaCity', 'Warsaw, Street 123', '12-45-789');
+END;
+/
+
+BEGIN
+    delete_cinema(1);
+END;
+/
+
+BEGIN
+    update_cinema(2, 'Updated CinemaCity', 'Updated Location, Update Street', '97-64-321');
+END;
+/

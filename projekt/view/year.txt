@@ -1,0 +1,11 @@
+CREATE VIEW View_AnnualTicketSales_2024_2025 AS
+SELECT Year, TotalTicketsSold 
+FROM AnnualTicketSales
+WHERE TO_NUMBER(Year) BETWEEN '2024' AND '2025'
+ORDER BY TO_NUMBER(Year);
+
+CREATE VIEW View_AnnualTotalRevenue_2024 AS
+SELECT Year, TotalRevenue 
+FROM AnnualTicketSales
+WHERE TO_NUMBER(Year) BETWEEN '2024' AND '2025'
+ORDER BY TO_NUMBER(Year);

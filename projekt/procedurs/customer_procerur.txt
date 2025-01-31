@@ -1,0 +1,214 @@
+-- procedura dodawania klienta do bazy
+
+-- puste pola
+-- zły format nr. telefonu
+-- zły format email
+-- klient o ID istnieje
+CREATE OR REPLACE PROCEDURE add_customer(
+    p_customer_id IN NUMBER,
+    p_name IN VARCHAR2,
+    p_email IN VARCHAR2,
+    p_phone IN VARCHAR2
+)
+AS
+    v_customer_string VARCHAR2(4000);
+    e_invalid_phone EXCEPTION;
+    e_invalid_email EXCEPTION;
+    e_empty_data EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_invalid_phone, -20001);
+    PRAGMA EXCEPTION_INIT(e_invalid_email, -20002);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20003);
+BEGIN
+    IF p_name IS NULL OR p_email IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_phone, '^\d{3}-\d{3}-\d{3}$') THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Invalid phone number format.');
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') THEN
+        RAISE e_invalid_email;
+    END IF;
+
+    INSERT INTO Customer (CustomerID, Name, Email, Phone)
+    VALUES (p_customer_id, p_name, p_email, p_phone);
+
+    v_customer_string := p_customer_id || '; ' || p_name || '; ' || p_email || '; ' || p_phone;
+
+    INSERT INTO ArchivesAddedCustomer (CustomerID, Name, Email, Phone, AddedDate)
+    VALUES (p_customer_id, p_name, p_email, p_phone, CURRENT_TIMESTAMP);
+
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('add_customer', v_customer_string, 'Customer', CURRENT_TIMESTAMP);
+
+    COMMIT;
+
+EXCEPTION
+    WHEN e_invalid_phone THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid phone number format.');
+        ROLLBACK;
+    WHEN e_invalid_email THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid email format.');
+        ROLLBACK;
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN DUP_VAL_ON_INDEX THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Customer with this ID already exists.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura usuwania klienta z bazy
+CREATE OR REPLACE PROCEDURE delete_customer(
+    p_customer_id IN NUMBER
+)
+AS
+    v_customer_name VARCHAR2(255);
+    v_customer_email VARCHAR2(255);
+    v_customer_phone VARCHAR2(20);
+    v_customer_string VARCHAR2(4000);
+    e_customer_not_found EXCEPTION;
+    PRAGMA EXCEPTION_INIT(e_customer_not_found, -20003);
+BEGIN
+    BEGIN
+        SELECT Name, Email, Phone
+        INTO v_customer_name, v_customer_email, v_customer_phone
+        FROM Customer
+        WHERE CustomerID = p_customer_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_customer_not_found;
+    END;
+
+    v_customer_string := p_customer_id || '; ' || v_customer_name || '; ' || v_customer_email || '; ' || v_customer_phone;
+    
+    INSERT INTO ArchivesDeletedCustomer (CustomerID, Name, Email, Phone, DeletedDate)
+    VALUES (p_customer_id, v_customer_name, v_customer_email, v_customer_phone, CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('delete_customer', v_customer_string, 'Customer', CURRENT_TIMESTAMP);
+
+    DELETE FROM Customer
+    WHERE CustomerID = p_customer_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_customer_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Customer with ID ' || p_customer_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+-- procedura aktualizacji klienta w bazie
+CREATE OR REPLACE PROCEDURE update_customer(
+    p_customer_id IN NUMBER,
+    p_new_name IN VARCHAR2,
+    p_new_email IN VARCHAR2,
+    p_new_phone IN VARCHAR2
+)
+AS
+    v_old_name VARCHAR2(255);
+    v_old_email VARCHAR2(255);
+    v_old_phone VARCHAR2(20);
+    
+    v_new_name VARCHAR2(255) := p_new_name;
+    v_new_email VARCHAR2(255) := p_new_email;
+    v_new_phone VARCHAR2(20) := p_new_phone;
+    
+    v_old_customer_string CLOB;
+    v_new_customer_string CLOB;
+    
+    e_invalid_email EXCEPTION;
+    e_invalid_phone EXCEPTION;
+    e_empty_data EXCEPTION;
+    e_customer_not_found EXCEPTION;
+    
+    PRAGMA EXCEPTION_INIT(e_invalid_email, -20001);
+    PRAGMA EXCEPTION_INIT(e_invalid_phone, -20002);
+    PRAGMA EXCEPTION_INIT(e_empty_data, -20003);
+    PRAGMA EXCEPTION_INIT(e_customer_not_found, -20004);
+
+BEGIN
+    IF p_new_name IS NULL OR p_new_email IS NULL THEN
+        RAISE e_empty_data;
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_new_email, '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$') THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Invalid email format.');
+    END IF;
+
+    IF NOT REGEXP_LIKE(p_new_phone, '^\d{3}-\d{3}-\d{3}$') THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Invalid phone number format.');
+    END IF;
+    
+    BEGIN
+        SELECT Name, Email, Phone
+        INTO v_old_name, v_old_email, v_old_phone
+        FROM Customer
+        WHERE CustomerID = p_customer_id;
+    EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            RAISE e_customer_not_found;
+    END;
+
+    v_old_customer_string := p_customer_id || '; ' || v_old_name || '; ' || v_old_email || '; ' || v_old_phone;
+    v_new_customer_string := p_customer_id || '; ' || v_new_name || '; ' || v_new_email || '; ' || v_new_phone;
+    
+    INSERT INTO ArchivesUpdateData (valueBefore, valueAfter, tableName, time)
+    VALUES (v_old_customer_string, v_new_customer_string, 'Customer', CURRENT_TIMESTAMP);
+    
+    INSERT INTO ArchivesAction (action, value, tableName, time)
+    VALUES ('update_customer', v_new_customer_string, 'Customer', CURRENT_TIMESTAMP);
+    
+    UPDATE Customer
+    SET Name = p_new_name, Email = p_new_email, Phone = p_new_phone
+    WHERE CustomerID = p_customer_id;
+    
+    COMMIT;
+
+EXCEPTION
+    WHEN e_empty_data THEN
+        DBMS_OUTPUT.PUT_LINE('Error: One or more required fields are empty.');
+        ROLLBACK;
+    WHEN e_invalid_email THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid email format.');
+        ROLLBACK;
+    WHEN e_invalid_phone THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Invalid phone number format.');
+        ROLLBACK;
+    WHEN e_customer_not_found THEN
+        DBMS_OUTPUT.PUT_LINE('Error: Customer with ID ' || p_customer_id || ' does not exist.');
+        ROLLBACK;
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('An unexpected error occurred: ' || SQLERRM);
+        ROLLBACK;
+END;
+/
+
+
+
+BEGIN
+    add_customer(11, 'Michał Ziółkowski', 'main@onet.com', '554-444-333');
+END;
+/
+
+BEGIN
+    delete_customer(10);
+END;
+/
+
+BEGIN
+    update_customer(2, 'asdsad', 'newEmail@wp.pl', '545-333-222');
+END;
+/

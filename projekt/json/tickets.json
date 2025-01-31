@@ -1,0 +1,22 @@
+[
+	{
+		"TicketID": 1,
+		"ShowtimeID": 1,
+		"CustomerID": 1,
+		"SeatNumbers": "A1,A2",
+		"Price": 20.0,
+		"CountPerson": 2,
+		"Sum": 40.0,
+		"DateBuy": "2025-02-18 20:30:00"
+	},
+	{
+		"TicketID": 2,
+		"ShowtimeID": 2,
+		"CustomerID": 2,
+		"SeatNumbers": "B1,B2",
+		"Price": 25.0,
+		"CountPerson": 2,
+		"Sum": 50.0,
+		"DateBuy": "2025-02-28 20:30:00"
+	}
+]

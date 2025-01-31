@@ -1,0 +1,20 @@
+[
+	{
+		"AuditoriumID": 1,
+		"CinemaID": 1,
+		"Name": "Main Hall",
+		"Capacity": 200
+	},
+	{
+		"AuditoriumID": 2,
+		"CinemaID": 1,
+		"Name": "Hall 2",
+		"Capacity": 150
+	},
+	{
+		"AuditoriumID": 3,
+		"CinemaID": 2,
+		"Name": "Cracow Hall",
+		"Capacity": 180
+	}
+]

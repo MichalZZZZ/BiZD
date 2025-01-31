@@ -1,0 +1,190 @@
+-- miesięczna sprzedaż biletów
+CREATE OR REPLACE FUNCTION CalculateMonthlyTicketSalesFunction RETURN SYS_REFCURSOR AS
+    v_result_cursor SYS_REFCURSOR;
+BEGIN
+    FOR record IN (
+        SELECT 
+            TO_CHAR(DateBuy, 'YYYY-MM') AS YearMonth, 
+            COUNT(DISTINCT TicketID) AS TotalTicketsSold, 
+            SUM(Sum) AS TotalRevenue
+        FROM Ticket
+        GROUP BY TO_CHAR(DateBuy, 'YYYY-MM')
+        ORDER BY YearMonth
+    ) LOOP
+        MERGE INTO MonthlyTicketSales mts
+        USING DUAL
+        ON (mts.YearMonth = record.YearMonth)
+        WHEN MATCHED THEN
+            UPDATE SET mts.TotalTicketsSold = record.TotalTicketsSold,
+                       mts.TotalRevenue = record.TotalRevenue,
+                       mts.CreatedAt = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (YearMonth, TotalTicketsSold, TotalRevenue)
+            VALUES (record.YearMonth, record.TotalTicketsSold, record.TotalRevenue);
+    END LOOP;
+
+    OPEN v_result_cursor FOR
+        SELECT * FROM MonthlyTicketSales;
+
+    RETURN v_result_cursor;
+END CalculateMonthlyTicketSalesFunction;
+
+DECLARE
+    result_cursor SYS_REFCURSOR;
+    record MonthlyTicketSales%ROWTYPE;
+BEGIN
+    result_cursor := CalculateMonthlyTicketSalesFunction;
+
+    LOOP
+        FETCH result_cursor INTO record;
+        EXIT WHEN result_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(record.YearMonth || ': ' || record.TotalTicketsSold || ' tickets sold');
+    END LOOP;
+
+    CLOSE result_cursor;
+END;
+
+
+
+-- kwartalna sprzedaż biletów
+CREATE OR REPLACE FUNCTION CalculateQuarterlyTicketSalesFunction RETURN SYS_REFCURSOR AS
+    v_result_cursor SYS_REFCURSOR;
+BEGIN
+    FOR record IN (
+        SELECT 
+            TO_CHAR(DateBuy, 'YYYY') || '/' || TO_CHAR(DateBuy, 'Q') AS YearQuarter, 
+            COUNT(DISTINCT TicketID) AS TotalTicketsSold, 
+            SUM(Sum) AS TotalRevenue
+        FROM Ticket
+        GROUP BY TO_CHAR(DateBuy, 'YYYY') || '/' || TO_CHAR(DateBuy, 'Q')
+        ORDER BY YearQuarter
+    ) LOOP
+        MERGE INTO QuarterlyTicketSales qts
+        USING DUAL
+        ON (qts.YearQuarter = record.YearQuarter)
+        WHEN MATCHED THEN
+            UPDATE SET qts.TotalTicketsSold = record.TotalTicketsSold,
+                       qts.TotalRevenue = record.TotalRevenue,
+                       qts.CreatedAt = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (YearQuarter, TotalTicketsSold, TotalRevenue, CreatedAt)
+            VALUES (record.YearQuarter, record.TotalTicketsSold, record.TotalRevenue, CURRENT_TIMESTAMP);
+    END LOOP;
+
+    OPEN v_result_cursor FOR
+        SELECT * FROM QuarterlyTicketSales;
+
+    RETURN v_result_cursor;
+END CalculateQuarterlyTicketSalesFunction;
+
+DECLARE
+    result_cursor SYS_REFCURSOR;
+    record QuarterlyTicketSales%ROWTYPE;
+BEGIN
+    result_cursor := CalculateQuarterlyTicketSalesFunction;
+
+    LOOP
+        FETCH result_cursor INTO record;
+        EXIT WHEN result_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(record.YearQuarter || ': ' || record.TotalTicketsSold || ' tickets sold, Revenue: ' || record.TotalRevenue);
+    END LOOP;
+
+    CLOSE result_cursor;
+END;
+
+
+
+-- roczna sprzedaż biletów
+CREATE OR REPLACE FUNCTION CalculateAnnualTicketSalesFunction RETURN SYS_REFCURSOR AS
+    v_result_cursor SYS_REFCURSOR;
+BEGIN
+    FOR record IN (
+        SELECT 
+            TO_CHAR(DateBuy, 'YYYY') AS Year, 
+            COUNT(DISTINCT TicketID) AS TotalTicketsSold, 
+            SUM(Sum) AS TotalRevenue
+        FROM Ticket
+        GROUP BY TO_CHAR(DateBuy, 'YYYY')
+        ORDER BY Year
+    ) LOOP
+        MERGE INTO AnnualTicketSales ats
+        USING DUAL
+        ON (ats.Year = record.Year)
+        WHEN MATCHED THEN
+            UPDATE SET ats.TotalTicketsSold = record.TotalTicketsSold,
+                       ats.TotalRevenue = record.TotalRevenue,
+                       ats.CreatedAt = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (Year, TotalTicketsSold, TotalRevenue, CreatedAt)
+            VALUES (record.Year, record.TotalTicketsSold, record.TotalRevenue, CURRENT_TIMESTAMP);
+    END LOOP;
+
+    OPEN v_result_cursor FOR
+        SELECT * FROM AnnualTicketSales;
+
+    RETURN v_result_cursor;
+END CalculateAnnualTicketSalesFunction;
+
+DECLARE
+    result_cursor SYS_REFCURSOR;
+    record AnnualTicketSales%ROWTYPE;
+BEGIN
+    result_cursor := CalculateAnnualTicketSalesFunction;
+
+    LOOP
+        FETCH result_cursor INTO record;
+        EXIT WHEN result_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(record.Year || ': ' || record.TotalTicketsSold || ' tickets sold, Revenue: ' || record.TotalRevenue);
+    END LOOP;
+
+    CLOSE result_cursor;
+END;
+
+
+
+-- 5 najpopularniejszych filmów
+CREATE OR REPLACE FUNCTION GetTopMovies RETURN SYS_REFCURSOR AS
+    v_result_cursor SYS_REFCURSOR;
+BEGIN
+    FOR record IN (
+        SELECT 
+            m.Title,
+            COUNT(t.TicketID) AS TicketsSold
+        FROM Ticket t
+        JOIN Showtime s ON t.ShowtimeID = s.ShowtimeID
+        JOIN Movie m ON s.MovieID = m.MovieID
+        GROUP BY m.Title
+        ORDER BY COUNT(t.TicketID) DESC
+        FETCH FIRST 5 ROWS ONLY
+    ) LOOP
+        MERGE INTO TopMovies tm
+        USING DUAL
+        ON (tm.Title = record.Title)
+        WHEN MATCHED THEN
+            UPDATE SET tm.TicketsSold = record.TicketsSold,
+                       tm.CreatedAt = CURRENT_TIMESTAMP
+        WHEN NOT MATCHED THEN
+            INSERT (Title, TicketsSold)
+            VALUES (record.Title, record.TicketsSold);
+    END LOOP;
+
+    OPEN v_result_cursor FOR
+        SELECT * FROM TopMovies ORDER BY TicketsSold DESC;
+
+    RETURN v_result_cursor;
+END GetTopMovies;
+
+DECLARE
+    result_cursor SYS_REFCURSOR;
+    record TopMovies%ROWTYPE;
+BEGIN
+    result_cursor := GetTopMovies;
+
+    LOOP
+        FETCH result_cursor INTO record;
+        EXIT WHEN result_cursor%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE(record.Title || ': ' || record.TicketsSold || ' tickets sold');
+    END LOOP;
+
+    CLOSE result_cursor;
+END;
